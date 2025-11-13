@@ -1,0 +1,477 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
+  }
+  public: {
+    Tables: {
+      clientes: {
+        Row: {
+          contacto: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          nif: string | null
+          nome: string
+          updated_at: string | null
+        }
+        Insert: {
+          contacto?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          nif?: string | null
+          nome: string
+          updated_at?: string | null
+        }
+        Update: {
+          contacto?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          nif?: string | null
+          nome?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      lembretes: {
+        Row: {
+          created_at: string | null
+          data_envio: string
+          enviado: boolean | null
+          id: string
+          mensagem: string | null
+          obrigacao_id: string | null
+          tipo: string
+        }
+        Insert: {
+          created_at?: string | null
+          data_envio: string
+          enviado?: boolean | null
+          id?: string
+          mensagem?: string | null
+          obrigacao_id?: string | null
+          tipo: string
+        }
+        Update: {
+          created_at?: string | null
+          data_envio?: string
+          enviado?: boolean | null
+          id?: string
+          mensagem?: string | null
+          obrigacao_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lembretes_obrigacao_id_fkey"
+            columns: ["obrigacao_id"]
+            isOneToOne: false
+            referencedRelation: "obrigacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      logs: {
+        Row: {
+          acao: string
+          created_at: string | null
+          detalhes: Json | null
+          entidade_id: string
+          entidade_tipo: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string | null
+          detalhes?: Json | null
+          entidade_id: string
+          entidade_tipo: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string | null
+          detalhes?: Json | null
+          entidade_id?: string
+          entidade_tipo?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      obrigacoes: {
+        Row: {
+          aprovado_em: string | null
+          concluido_em: string | null
+          created_at: string | null
+          created_by: string | null
+          deadline_interna: string
+          deadline_oficial: string
+          deadline_revisao_senior: string
+          enviado_senior_em: string | null
+          estado: Database["public"]["Enums"]["estado_obrigacao"] | null
+          id: string
+          notas: string | null
+          periodicidade: Database["public"]["Enums"]["periodicidade"]
+          periodo_referencia: string | null
+          projeto_id: string
+          responsavel_id: string | null
+          submetido_em: string | null
+          tipo: Database["public"]["Enums"]["tipo_obrigacao"]
+          titulo: string
+          updated_at: string | null
+        }
+        Insert: {
+          aprovado_em?: string | null
+          concluido_em?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          deadline_interna: string
+          deadline_oficial: string
+          deadline_revisao_senior: string
+          enviado_senior_em?: string | null
+          estado?: Database["public"]["Enums"]["estado_obrigacao"] | null
+          id?: string
+          notas?: string | null
+          periodicidade: Database["public"]["Enums"]["periodicidade"]
+          periodo_referencia?: string | null
+          projeto_id: string
+          responsavel_id?: string | null
+          submetido_em?: string | null
+          tipo: Database["public"]["Enums"]["tipo_obrigacao"]
+          titulo: string
+          updated_at?: string | null
+        }
+        Update: {
+          aprovado_em?: string | null
+          concluido_em?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          deadline_interna?: string
+          deadline_oficial?: string
+          deadline_revisao_senior?: string
+          enviado_senior_em?: string | null
+          estado?: Database["public"]["Enums"]["estado_obrigacao"] | null
+          id?: string
+          notas?: string | null
+          periodicidade?: Database["public"]["Enums"]["periodicidade"]
+          periodo_referencia?: string | null
+          projeto_id?: string
+          responsavel_id?: string | null
+          submetido_em?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_obrigacao"]
+          titulo?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obrigacoes_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          nome: string
+          role: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id: string
+          nome: string
+          role?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          nome?: string
+          role?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      projetos: {
+        Row: {
+          ativo: boolean | null
+          cliente_id: string | null
+          cor: string | null
+          created_at: string | null
+          created_by: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          cliente_id?: string | null
+          cor?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          cliente_id?: string | null
+          cor?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projetos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tarefas: {
+        Row: {
+          concluida: boolean | null
+          created_at: string | null
+          deadline: string | null
+          descricao: string | null
+          id: string
+          obrigacao_id: string | null
+          responsavel_id: string | null
+          titulo: string
+          updated_at: string | null
+        }
+        Insert: {
+          concluida?: boolean | null
+          created_at?: string | null
+          deadline?: string | null
+          descricao?: string | null
+          id?: string
+          obrigacao_id?: string | null
+          responsavel_id?: string | null
+          titulo: string
+          updated_at?: string | null
+        }
+        Update: {
+          concluida?: boolean | null
+          created_at?: string | null
+          deadline?: string | null
+          descricao?: string | null
+          id?: string
+          obrigacao_id?: string | null
+          responsavel_id?: string | null
+          titulo?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tarefas_obrigacao_id_fkey"
+            columns: ["obrigacao_id"]
+            isOneToOne: false
+            referencedRelation: "obrigacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      estado_obrigacao:
+        | "pendente"
+        | "em_revisao"
+        | "aprovado"
+        | "submetido"
+        | "concluido"
+        | "atrasado"
+      periodicidade: "mensal" | "trimestral" | "anual" | "pontual"
+      tipo_obrigacao:
+        | "iva"
+        | "ies"
+        | "saft"
+        | "modelo_10"
+        | "modelo_22"
+        | "dmr"
+        | "ifs"
+        | "outro"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      estado_obrigacao: [
+        "pendente",
+        "em_revisao",
+        "aprovado",
+        "submetido",
+        "concluido",
+        "atrasado",
+      ],
+      periodicidade: ["mensal", "trimestral", "anual", "pontual"],
+      tipo_obrigacao: [
+        "iva",
+        "ies",
+        "saft",
+        "modelo_10",
+        "modelo_22",
+        "dmr",
+        "ifs",
+        "outro",
+      ],
+    },
+  },
+} as const
