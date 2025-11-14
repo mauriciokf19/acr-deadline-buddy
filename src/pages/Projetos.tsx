@@ -59,6 +59,7 @@ export default function Projetos() {
       } else if (filters.status === "arquivado") {
         query = query.eq("ativo", false);
       }
+      // "todos" shows all projects
 
       const { data, error } = await query;
       if (error) throw error;
@@ -197,7 +198,7 @@ export default function Projetos() {
                 <SelectContent>
                   <SelectItem value="ativo">Ativos</SelectItem>
                   <SelectItem value="arquivado">Arquivados</SelectItem>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="todos">Todos</SelectItem>
                 </SelectContent>
               </Select>
             </div>
