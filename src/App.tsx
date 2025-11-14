@@ -9,6 +9,8 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Projetos from "./pages/Projetos";
 import Obrigacoes from "./pages/Obrigacoes";
+import Tarefas from "./pages/Tarefas";
+import Lembretes from "./pages/Lembretes";
 import Calendario from "./pages/Calendario";
 import Alertas from "./pages/Alertas";
 import Definicoes from "./pages/Definicoes";
@@ -71,6 +73,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Definicoes />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tarefas"
+              element={
+                <ProtectedRoute>
+                  <Tarefas />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/lembretes"
+              element={
+                <ProtectedRoute>
+                  <Lembretes />
                 </ProtectedRoute>
               }
             />

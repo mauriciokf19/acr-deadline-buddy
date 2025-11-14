@@ -1,12 +1,155 @@
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, ClipboardCheck } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus, Search, Filter, X } from "lucide-react";
+import { ObrigacaoCard } from "@/components/ObrigacaoCard";
+import { ObrigacaoForm } from "@/components/ObrigacaoForm";
+import { useObrigacoesFilters } from "@/hooks/useObrigacoesFilters";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
+import { createLog } from "@/lib/logUtils";
+import { startOfDay, endOfDay, addDays } from "date-fns";
 
 export default function Obrigacoes() {
+  const [obrigacoes, setObrigacoes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingObrigacao, setEditingObrigacao] = useState<any>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const { filters, updateFilter, clearFilters } = useObrigacoesFilters();
+
+  useEffect(() => {
+    loadObrigacoes();
+  }, [filters]);
+
+  const loadObrigacoes = async () => {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from("obrigacoes")
+        .select(`
+          *,
+          projeto:projetos(nome, cor)
+        `)
+        .order("deadline_oficial");
+
+      if (filters.search) {
+        query = query.ilike("titulo", `%${filters.search}%`);
+      }
+      if (filters.tipo) {
+        query = (query as any).eq("tipo", filters.tipo);
+      }
+      if (filters.periodo) {
+        query = query.ilike("periodo_referencia", `%${filters.periodo}%`);
+      }
+      if (filters.estado) {
+        query = (query as any).eq("estado", filters.estado);
+      }
+      if (filters.prioridade) {
+        query = (query as any).eq("prioridade", filters.prioridade);
+      }
+      if (filters.projeto_id) {
+        query = query.eq("projeto_id", filters.projeto_id);
+      }
+
+      // Filtros de prazo
+      const now = new Date();
+      if (filters.prazo === "atrasadas") {
+        query = query.lt("deadline_oficial", now.toISOString())
+                     .neq("estado", "concluido" as any);
+      } else if (filters.prazo === "hoje") {
+        query = query.gte("deadline_oficial", startOfDay(now).toISOString())
+                     .lte("deadline_oficial", endOfDay(now).toISOString());
+      } else if (filters.prazo === "semana") {
+        query = query.gte("deadline_oficial", now.toISOString())
+                     .lte("deadline_oficial", addDays(now, 7).toISOString());
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      setObrigacoes(data || []);
+    } catch (error: any) {
+      console.error("Erro ao carregar obrigações:", error);
+      toast.error("Erro ao carregar obrigações");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuickAction = async (obrigacao: any, action: string) => {
+    try {
+      let updates: any = {};
+      let logDetails = "";
+
+      switch (action) {
+        case "enviar_senior":
+          updates = { 
+            estado: "em_revisao",
+            enviado_senior_em: new Date().toISOString() 
+          };
+          logDetails = "Enviado ao Senior";
+          break;
+        case "aprovar":
+          updates = { 
+            estado: "aprovado",
+            aprovado_em: new Date().toISOString() 
+          };
+          logDetails = "Aprovado pelo Senior";
+          break;
+        case "submeter":
+          if (!obrigacao.submetido_em) {
+            toast.error("Data de submissão é obrigatória");
+            return;
+          }
+          updates = { estado: "submetido" };
+          logDetails = "Submetido";
+          break;
+        case "concluir":
+          updates = { 
+            estado: "concluido",
+            concluido_em: new Date().toISOString() 
+          };
+          logDetails = "Concluído";
+          break;
+      }
+
+      const { error } = await supabase
+        .from("obrigacoes")
+        .update(updates)
+        .eq("id", obrigacao.id);
+
+      if (error) throw error;
+
+      await createLog({
+        entidade_tipo: "obrigacao",
+        entidade_id: obrigacao.id,
+        acao: "mudanca_estado",
+        detalhes: logDetails,
+      });
+
+      toast.success(logDetails);
+      loadObrigacoes();
+    } catch (error: any) {
+      console.error("Erro ao atualizar obrigação:", error);
+      toast.error("Erro ao atualizar obrigação");
+    }
+  };
+
+  const hasActiveFilters = filters.search || filters.tipo || filters.periodo || 
+                          filters.estado || filters.prioridade || filters.projeto_id || filters.prazo;
+
   return (
     <Layout>
-      <div className="container mx-auto max-w-lg space-y-6 p-4">
+      <div className="container mx-auto max-w-lg space-y-4 p-4">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <h1 className="text-2xl font-bold">Obrigações</h1>
@@ -14,25 +157,118 @@ export default function Obrigacoes() {
               Gerir obrigações fiscais
             </p>
           </div>
-          <Button size="icon" className="rounded-full">
+          <Button 
+            size="icon" 
+            className="rounded-full"
+            onClick={() => {
+              setEditingObrigacao(null);
+              setShowForm(true);
+            }}
+          >
             <Plus className="h-5 w-5" />
           </Button>
         </div>
 
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <ClipboardCheck className="mb-4 h-16 w-16 text-muted-foreground" />
-            <h3 className="mb-2 font-semibold">Nenhuma obrigação criada</h3>
-            <p className="mb-4 text-sm text-muted-foreground">
-              Adicione a sua primeira obrigação fiscal
-            </p>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Criar Obrigação
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Pesquisar obrigações..."
+                value={filters.search}
+                onChange={(e) => updateFilter("search", e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Button
+              variant={showFilters ? "default" : "outline"}
+              size="icon"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <Filter className="h-4 w-4" />
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+
+          {showFilters && (
+            <div className="space-y-2 rounded-lg border p-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium">Filtros</h3>
+                {hasActiveFilters && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="h-8 px-2"
+                  >
+                    <X className="mr-1 h-3 w-3" />
+                    Limpar
+                  </Button>
+                )}
+              </div>
+
+              <Select
+                value={filters.prazo}
+                onValueChange={(value) => updateFilter("prazo", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Vencimento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="atrasadas">Atrasadas</SelectItem>
+                  <SelectItem value="hoje">Hoje</SelectItem>
+                  <SelectItem value="semana">Esta semana</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={filters.estado}
+                onValueChange={(value) => updateFilter("estado", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="pendente">Pendente</SelectItem>
+                  <SelectItem value="em_revisao">Em Revisão</SelectItem>
+                  <SelectItem value="aprovado">Aprovado</SelectItem>
+                  <SelectItem value="submetido">Submetido</SelectItem>
+                  <SelectItem value="concluido">Concluído</SelectItem>
+                  <SelectItem value="atrasado">Atrasado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+
+        {loading ? (
+          <div className="text-center text-sm text-muted-foreground py-8">
+            A carregar obrigações...
+          </div>
+        ) : obrigacoes.length === 0 ? (
+          <div className="text-center text-sm text-muted-foreground py-8">
+            Nenhuma obrigação encontrada
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {obrigacoes.map((obrigacao) => (
+              <ObrigacaoCard
+                key={obrigacao.id}
+                obrigacao={obrigacao}
+                onQuickAction={(action) => handleQuickAction(obrigacao, action)}
+              />
+            ))}
+          </div>
+        )}
       </div>
+
+      <ObrigacaoForm
+        open={showForm}
+        onOpenChange={setShowForm}
+        obrigacao={editingObrigacao}
+        onSuccess={loadObrigacoes}
+      />
     </Layout>
   );
 }
