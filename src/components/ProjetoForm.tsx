@@ -115,18 +115,20 @@ export function ProjetoForm({ open, onOpenChange, projeto, onSuccess }: ProjetoF
 
         toast.success("Projeto atualizado com sucesso");
       } else {
-        // Criar
+        // Criar - preparar payload sem campos vazios
+        const insertPayload: any = {
+          nome: data.nome,
+          descricao: data.descricao || undefined,
+          cliente_id: data.cliente_id || undefined,
+          pais: data.pais || undefined, // deixar DB aplicar default se vazio
+          ano_fiscal: data.ano_fiscal || undefined, // deixar DB aplicar default se vazio
+          cor: data.cor,
+          ativo: data.ativo,
+        };
+
         const { data: newProjeto, error } = await supabase
           .from("projetos")
-          .insert({
-            nome: data.nome,
-            descricao: data.descricao,
-            cliente_id: data.cliente_id || null,
-            pais: data.pais,
-            ano_fiscal: data.ano_fiscal,
-            cor: data.cor,
-            ativo: data.ativo,
-          })
+          .insert(insertPayload)
           .select()
           .single();
 
