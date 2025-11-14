@@ -200,24 +200,35 @@ export function TarefaForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Obrigação (Opcional)</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma obrigação" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="">Sem obrigação</SelectItem>
-                        {obrigacoes.map((obrigacao) => (
-                          <SelectItem key={obrigacao.id} value={obrigacao.id}>
-                            {obrigacao.titulo}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex gap-2">
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value || undefined}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma obrigação" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {obrigacoes.filter(o => o.id).map((obrigacao) => (
+                            <SelectItem key={obrigacao.id} value={obrigacao.id}>
+                              {obrigacao.titulo}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {field.value && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => field.onChange(undefined)}
+                        >
+                          ✕
+                        </Button>
+                      )}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}

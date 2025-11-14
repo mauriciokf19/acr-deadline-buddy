@@ -194,19 +194,21 @@ export function GenerateObrigacoesForm({
         });
       }
 
-      // Criar entrada em template_instancias
+      // Registar instância do template
       if (generatedCount > 0) {
-        await supabase.from("template_instancias").insert({
-          template_id: template.id,
-          projeto_id: data.projeto_id,
-          ano_fiscal: data.ano_fiscal,
-          parametros_json: {
-            periodos_selecionados: data.periodos,
-            periodicidade: template.periodicidade,
-            obrigacoes_ids: obrigacoesIds,
-          },
-          obrigacoes_geradas: generatedCount,
-        });
+        const { error: instanceError } = await supabase
+          .from("template_instancias" as any)
+          .insert({
+            template_id: template.id,
+            projeto_id: data.projeto_id,
+            ano_fiscal: data.ano_fiscal,
+            parametros_json: {
+              periodos_selecionados: data.periodos,
+              periodicidade: template.periodicidade,
+              obrigacoes_ids: obrigacoesIds,
+            },
+            obrigacoes_geradas: generatedCount,
+          });
 
         const projeto = projetos.find(p => p.id === data.projeto_id);
         toast.success(

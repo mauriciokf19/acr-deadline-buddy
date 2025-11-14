@@ -170,7 +170,7 @@ export function LembreteForm({
                   <FormLabel>Tipo de Entidade</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -197,21 +197,21 @@ export function LembreteForm({
                   </FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={`Selecione ${entidadeTipo === "obrigacao" ? "a obrigação" : "a tarefa"}`} />
+                        <SelectValue placeholder={`Selecione ${entidadeTipo === "obrigacao" ? "uma obrigação" : "uma tarefa"}`} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {entidadeTipo === "obrigacao"
-                        ? obrigacoes.map((obrigacao) => (
+                        ? obrigacoes.filter(o => o.id).map((obrigacao) => (
                             <SelectItem key={obrigacao.id} value={obrigacao.id}>
                               {obrigacao.titulo}
                             </SelectItem>
                           ))
-                        : tarefas.map((tarefa) => (
+                        : tarefas.filter(t => t.id).map((tarefa) => (
                             <SelectItem key={tarefa.id} value={tarefa.id}>
                               {tarefa.titulo}
                             </SelectItem>
@@ -248,7 +248,7 @@ export function LembreteForm({
                   <FormLabel>Canal</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>

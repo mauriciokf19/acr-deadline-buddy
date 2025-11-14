@@ -220,7 +220,8 @@ export function ObrigacaoForm({
                   <FormLabel>Projeto</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value || undefined}
+                    disabled={!!projetoId}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -228,7 +229,7 @@ export function ObrigacaoForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {projetos.map((projeto) => (
+                      {projetos.filter(p => p.id).map((projeto) => (
                         <SelectItem key={projeto.id} value={projeto.id}>
                           {projeto.nome}
                         </SelectItem>
@@ -249,7 +250,7 @@ export function ObrigacaoForm({
                     <FormLabel>Tipo</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -257,7 +258,7 @@ export function ObrigacaoForm({
                         </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {TIPOS_OBRIGACAO.map((tipo) => (
+                      {TIPOS_OBRIGACAO.filter(t => t).map((tipo) => (
                         <SelectItem key={tipo} value={tipo}>
                           {tipo.toUpperCase()}
                         </SelectItem>
@@ -277,7 +278,7 @@ export function ObrigacaoForm({
                     <FormLabel>Periodicidade</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -285,7 +286,7 @@ export function ObrigacaoForm({
                         </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {PERIODICIDADES.map((per) => (
+                      {PERIODICIDADES.filter(p => p).map((per) => (
                         <SelectItem key={per} value={per}>
                           {per.charAt(0).toUpperCase() + per.slice(1)}
                         </SelectItem>
@@ -320,7 +321,7 @@ export function ObrigacaoForm({
                   <FormLabel>Prioridade</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
