@@ -158,7 +158,7 @@ export function TemplateForm({ open, onOpenChange, template, onSuccess }: Templa
                     <FormLabel>País</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -186,7 +186,7 @@ export function TemplateForm({ open, onOpenChange, template, onSuccess }: Templa
                     <FormLabel>Tipo</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -194,7 +194,7 @@ export function TemplateForm({ open, onOpenChange, template, onSuccess }: Templa
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {TIPOS_OBRIGACAO.map((tipo) => (
+                        {TIPOS_OBRIGACAO.filter(t => t).map((tipo) => (
                           <SelectItem key={tipo} value={tipo}>
                             {tipo.toUpperCase()}
                           </SelectItem>
@@ -215,7 +215,7 @@ export function TemplateForm({ open, onOpenChange, template, onSuccess }: Templa
                   <FormLabel>Periodicidade</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -223,7 +223,7 @@ export function TemplateForm({ open, onOpenChange, template, onSuccess }: Templa
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {PERIODICIDADES.map((per) => (
+                      {PERIODICIDADES.filter(p => p).map((per) => (
                         <SelectItem key={per} value={per}>
                           {per.charAt(0).toUpperCase() + per.slice(1)}
                         </SelectItem>

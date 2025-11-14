@@ -194,24 +194,35 @@ export function ProjetoForm({ open, onOpenChange, projeto, onSuccess }: ProjetoF
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Cliente (Opcional)</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um cliente" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="">Sem cliente</SelectItem>
-                      {clientes.map((cliente) => (
-                        <SelectItem key={cliente.id} value={cliente.id}>
-                          {cliente.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2">
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || undefined}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um cliente" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {clientes.filter(c => c.id).map((cliente) => (
+                          <SelectItem key={cliente.id} value={cliente.id}>
+                            {cliente.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {field.value && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => field.onChange(undefined)}
+                      >
+                        ✕
+                      </Button>
+                    )}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -226,7 +237,7 @@ export function ProjetoForm({ open, onOpenChange, projeto, onSuccess }: ProjetoF
                     <FormLabel>País</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
