@@ -12,6 +12,7 @@ import Obrigacoes from "./pages/Obrigacoes";
 import Calendario from "./pages/Calendario";
 import Alertas from "./pages/Alertas";
 import Definicoes from "./pages/Definicoes";
+import Templates from "./pages/Templates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -70,6 +71,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Definicoes />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/templates"
+              element={
+                <ProtectedRoute>
+                  <Templates />
                 </ProtectedRoute>
               }
             />
