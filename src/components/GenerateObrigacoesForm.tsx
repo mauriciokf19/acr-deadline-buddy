@@ -194,7 +194,7 @@ export function GenerateObrigacoesForm({
         });
       }
 
-      // Create template instance record
+      // Criar entrada em template_instancias
       if (generatedCount > 0) {
         await supabase.from("template_instancias").insert({
           template_id: template.id,
@@ -206,7 +206,6 @@ export function GenerateObrigacoesForm({
             obrigacoes_ids: obrigacoesIds,
           },
           obrigacoes_geradas: generatedCount,
-          user_id: user.id,
         });
 
         const projeto = projetos.find(p => p.id === data.projeto_id);

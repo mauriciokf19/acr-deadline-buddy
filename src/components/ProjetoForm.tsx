@@ -147,7 +147,17 @@ export function ProjetoForm({ open, onOpenChange, projeto, onSuccess }: ProjetoF
       form.reset();
     } catch (error: any) {
       console.error("Erro ao salvar projeto:", error);
-      toast.error(error.message || "Erro ao salvar projeto");
+      
+      // Mensagens de erro específicas em PT-PT
+      if (error.code === 'PGRST301' || error.message?.includes('row-level security')) {
+        toast.error("Não foi possível criar o projeto. Verifica a tua sessão e permissões.");
+      } else if (error.code === '23505') {
+        toast.error("Já existe um projeto com este nome.");
+      } else if (error.code === '23502') {
+        toast.error("Preenche todos os campos obrigatórios.");
+      } else {
+        toast.error(error.message || "Erro ao salvar projeto");
+      }
     } finally {
       setLoading(false);
     }
