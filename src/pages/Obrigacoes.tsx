@@ -50,7 +50,7 @@ export default function Obrigacoes() {
       if (filters.periodo) {
         query = query.ilike("periodo_referencia", `%${filters.periodo}%`);
       }
-      if (filters.estado) {
+      if (filters.estado && filters.estado !== "todos") {
         query = (query as any).eq("estado", filters.estado);
       }
       if (filters.prioridade) {
@@ -72,6 +72,7 @@ export default function Obrigacoes() {
         query = query.gte("deadline_oficial", now.toISOString())
                      .lte("deadline_oficial", addDays(now, 7).toISOString());
       }
+      // "todos" shows all obligations
 
       const { data, error } = await query;
       if (error) throw error;
@@ -145,7 +146,9 @@ export default function Obrigacoes() {
   };
 
   const hasActiveFilters = filters.search || filters.tipo || filters.periodo || 
-                          filters.estado || filters.prioridade || filters.projeto_id || filters.prazo;
+                          (filters.estado && filters.estado !== "todos") || 
+                          filters.prioridade || filters.projeto_id || 
+                          (filters.prazo && filters.prazo !== "todos");
 
   return (
     <Layout>
@@ -214,7 +217,7 @@ export default function Obrigacoes() {
                   <SelectValue placeholder="Vencimento" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="todos">Todos</SelectItem>
                   <SelectItem value="atrasadas">Atrasadas</SelectItem>
                   <SelectItem value="hoje">Hoje</SelectItem>
                   <SelectItem value="semana">Esta semana</SelectItem>
@@ -229,7 +232,7 @@ export default function Obrigacoes() {
                   <SelectValue placeholder="Estado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="todos">Todos</SelectItem>
                   <SelectItem value="pendente">Pendente</SelectItem>
                   <SelectItem value="em_revisao">Em Revisão</SelectItem>
                   <SelectItem value="aprovado">Aprovado</SelectItem>

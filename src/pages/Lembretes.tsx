@@ -47,13 +47,13 @@ export default function Lembretes() {
       if (filters.search) {
         query = (query as any).or(`regra.ilike.%${filters.search}%,mensagem.ilike.%${filters.search}%`);
       }
-      if (filters.entidade_tipo) {
+      if (filters.entidade_tipo && filters.entidade_tipo !== "todos") {
         query = (query as any).eq("entidade_tipo", filters.entidade_tipo);
       }
-      if (filters.canal) {
+      if (filters.canal && filters.canal !== "todos") {
         query = (query as any).eq("canal", filters.canal);
       }
-      if (filters.ativo) {
+      if (filters.ativo && filters.ativo !== "todos") {
         query = (query as any).eq("ativo", filters.ativo === "true");
       }
 
@@ -93,8 +93,10 @@ export default function Lembretes() {
     }
   };
 
-  const hasActiveFilters = filters.search || filters.entidade_tipo || 
-                          filters.canal || filters.ativo;
+  const hasActiveFilters = filters.search || 
+                          (filters.entidade_tipo && filters.entidade_tipo !== "todos") || 
+                          (filters.canal && filters.canal !== "todos") || 
+                          (filters.ativo && filters.ativo !== "todos");
 
   const getEntidadeNome = (lembrete: any) => {
     if (lembrete.entidade_tipo === "obrigacao") {
@@ -172,7 +174,7 @@ export default function Lembretes() {
                   <SelectValue placeholder="Tipo de Entidade" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="todos">Todos</SelectItem>
                   <SelectItem value="obrigacao">Obrigação</SelectItem>
                   <SelectItem value="tarefa">Tarefa</SelectItem>
                 </SelectContent>
@@ -186,7 +188,7 @@ export default function Lembretes() {
                   <SelectValue placeholder="Canal" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="todos">Todos</SelectItem>
                   <SelectItem value="email">Email</SelectItem>
                   <SelectItem value="push">Push</SelectItem>
                 </SelectContent>
@@ -200,7 +202,7 @@ export default function Lembretes() {
                   <SelectValue placeholder="Estado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="todos">Todos</SelectItem>
                   <SelectItem value="true">Ativos</SelectItem>
                   <SelectItem value="false">Inativos</SelectItem>
                 </SelectContent>
