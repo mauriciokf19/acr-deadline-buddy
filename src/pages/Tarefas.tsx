@@ -52,6 +52,7 @@ export default function Tarefas() {
       } else if (filters.estado === "nao_concluida") {
         query = query.eq("concluida", false);
       }
+      // "todas" shows all tasks
       if (filters.responsavel_id) {
         query = query.eq("responsavel_id", filters.responsavel_id);
       }
@@ -126,7 +127,8 @@ export default function Tarefas() {
     }
   };
 
-  const hasActiveFilters = filters.search || filters.estado || 
+  const hasActiveFilters = filters.search || 
+                          (filters.estado && filters.estado !== "todas") || 
                           filters.responsavel_id || filters.obrigacao_id;
 
   return (
@@ -196,7 +198,7 @@ export default function Tarefas() {
                   <SelectValue placeholder="Estado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="todas">Todas</SelectItem>
                   <SelectItem value="nao_concluida">Por fazer</SelectItem>
                   <SelectItem value="concluida">Concluídas</SelectItem>
                 </SelectContent>

@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 
 interface TarefasFilters {
   search: string;
-  estado: string; // "concluida" | ""
+  estado: string; // "concluida" | "nao_concluida" | "todas"
   responsavel_id: string;
   projeto_id: string;
   obrigacao_id: string;
-  deadline: string; // "atrasadas" | "hoje" | "semana" | ""
+  deadline: string; // "atrasadas" | "hoje" | "semana" | "todas"
 }
 
 const STORAGE_KEY = "acr-tarefas-filters";
@@ -16,7 +16,7 @@ export function useTarefasFilters() {
     const saved = localStorage.getItem(STORAGE_KEY);
     return saved ? JSON.parse(saved) : {
       search: "",
-      estado: "",
+      estado: "todas",
       responsavel_id: "",
       projeto_id: "",
       obrigacao_id: "",
@@ -35,7 +35,7 @@ export function useTarefasFilters() {
   const clearFilters = () => {
     setFilters({
       search: "",
-      estado: "",
+      estado: "todas",
       responsavel_id: "",
       projeto_id: "",
       obrigacao_id: "",

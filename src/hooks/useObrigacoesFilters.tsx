@@ -7,7 +7,7 @@ interface ObrigacoesFilters {
   estado: string;
   prioridade: string;
   projeto_id: string;
-  prazo: string; // "atrasadas" | "hoje" | "semana" | ""
+  prazo: string; // "atrasadas" | "hoje" | "semana" | "todos"
 }
 
 const STORAGE_KEY = "acr-obrigacoes-filters";
@@ -19,10 +19,10 @@ export function useObrigacoesFilters() {
       search: "",
       tipo: "",
       periodo: "",
-      estado: "",
+      estado: "todos",
       prioridade: "",
       projeto_id: "",
-      prazo: "",
+      prazo: "todos",
     };
   });
 
@@ -39,10 +39,10 @@ export function useObrigacoesFilters() {
       search: "",
       tipo: "",
       periodo: "",
-      estado: "",
+      estado: "todos",
       prioridade: "",
       projeto_id: "",
-      prazo: "",
+      prazo: "todos",
     });
   };
 

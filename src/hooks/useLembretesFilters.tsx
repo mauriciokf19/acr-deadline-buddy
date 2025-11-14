@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 
 interface LembretesFilters {
   search: string;
-  entidade_tipo: string; // "obrigacao" | "tarefa" | ""
-  canal: string; // "email" | "push" | ""
-  ativo: string; // "true" | "false" | ""
+  entidade_tipo: string; // "obrigacao" | "tarefa" | "todos"
+  canal: string; // "email" | "push" | "todos"
+  ativo: string; // "true" | "false" | "todos"
 }
 
 const STORAGE_KEY = "acr-lembretes-filters";
@@ -14,9 +14,9 @@ export function useLembretesFilters() {
     const saved = localStorage.getItem(STORAGE_KEY);
     return saved ? JSON.parse(saved) : {
       search: "",
-      entidade_tipo: "",
-      canal: "",
-      ativo: "",
+      entidade_tipo: "todos",
+      canal: "todos",
+      ativo: "todos",
     };
   });
 
@@ -31,9 +31,9 @@ export function useLembretesFilters() {
   const clearFilters = () => {
     setFilters({
       search: "",
-      entidade_tipo: "",
-      canal: "",
-      ativo: "",
+      entidade_tipo: "todos",
+      canal: "todos",
+      ativo: "todos",
     });
   };
 
