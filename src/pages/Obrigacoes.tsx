@@ -29,11 +29,31 @@ export default function Obrigacoes() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [obrigacaoToDelete, setObrigacaoToDelete] = useState<any>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [profileSettings, setProfileSettings] = useState<any>(null);
   const { filters, updateFilter, clearFilters } = useObrigacoesFilters();
 
   useEffect(() => {
     loadObrigacoes();
+    loadProfileSettings();
   }, [filters]);
+
+  const loadProfileSettings = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("exigir_comprovativo_para_submetido")
+        .eq("id", user.id)
+        .single();
+
+      if (error) throw error;
+      setProfileSettings(data);
+    } catch (error) {
+      console.error("Erro ao carregar configurações do perfil:", error);
+    }
+  };
 
   const loadObrigacoes = async () => {
     setLoading(true);
@@ -117,6 +137,28 @@ export default function Obrigacoes() {
             toast.error("Data de submissão é obrigatória");
             return;
           }
+          
+          // Check if comprovativo is required and missing
+          if (profileSettings?.exigir_comprovativo_para_submetido) {
+            const hasComprovativo = obrigacao.comprovativo_storage_path || obrigacao.comprovativo_url;
+            if (!hasComprovativo) {
+              toast.error("Para marcar como Submetido, tens de anexar o comprovativo e preencher a data de submissão.");
+              
+              // Log the blocked attempt
+              await createLog({
+                entidade_tipo: "obrigacao",
+                entidade_id: obrigacao.id,
+                acao: "submissao_bloqueada",
+                detalhes: JSON.stringify({
+                  motivo: "Comprovativo em falta",
+                  regra: "exigir_comprovativo_para_submetido ativo"
+                })
+              });
+              
+              return;
+            }
+          }
+          
           updates = { estado: "submetido" };
           logDetails = "Submetido";
           break;

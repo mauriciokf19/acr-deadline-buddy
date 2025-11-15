@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { hardDeleteObrigacao, restoreObrigacao } from "@/lib/obrigacoesService";
+import { Switch } from "@/components/ui/switch";
 
 interface ReminderDefaults {
   lembrete_interna_dias: number;
@@ -26,6 +27,7 @@ interface ReminderDefaults {
   lembrete_followup_horas: number;
   janela_silencio_inicio: string | null;
   janela_silencio_fim: string | null;
+  exigir_comprovativo_para_submetido: boolean;
 }
 
 export default function Definicoes() {
@@ -42,6 +44,7 @@ export default function Definicoes() {
     lembrete_followup_horas: 48,
     janela_silencio_inicio: null,
     janela_silencio_fim: null,
+    exigir_comprovativo_para_submetido: false,
   });
   const [savingDefaults, setSavingDefaults] = useState(false);
 
@@ -69,7 +72,7 @@ export default function Definicoes() {
     
     const { data, error } = await supabase
       .from("profiles")
-      .select("lembrete_interna_dias, lembrete_oficial_dias, lembrete_followup_horas, janela_silencio_inicio, janela_silencio_fim")
+      .select("lembrete_interna_dias, lembrete_oficial_dias, lembrete_followup_horas, janela_silencio_inicio, janela_silencio_fim, exigir_comprovativo_para_submetido")
       .eq("id", user.id)
       .single();
 
@@ -82,6 +85,7 @@ export default function Definicoes() {
         lembrete_followup_horas: data.lembrete_followup_horas ?? 48,
         janela_silencio_inicio: data.janela_silencio_inicio,
         janela_silencio_fim: data.janela_silencio_fim,
+        exigir_comprovativo_para_submetido: data.exigir_comprovativo_para_submetido ?? false,
       });
     }
   };
@@ -99,12 +103,13 @@ export default function Definicoes() {
           lembrete_followup_horas: reminderDefaults.lembrete_followup_horas,
           janela_silencio_inicio: reminderDefaults.janela_silencio_inicio,
           janela_silencio_fim: reminderDefaults.janela_silencio_fim,
+          exigir_comprovativo_para_submetido: reminderDefaults.exigir_comprovativo_para_submetido,
         })
         .eq("id", user.id);
 
       if (error) throw error;
 
-      toast.success("Configurações de lembretes guardadas.");
+      toast.success("Configurações guardadas.");
     } catch (error) {
       console.error("Erro ao guardar defaults:", error);
       toast.error("Erro ao guardar configurações.");
@@ -383,6 +388,49 @@ export default function Definicoes() {
                 Criar para Existentes
               </Button>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="h-5 w-5" />
+              Regras de Validação
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Configurações de validação para transições de estado.
+            </p>
+
+            <div className="flex items-center justify-between space-x-4 rounded-lg border p-4">
+              <div className="flex-1 space-y-1">
+                <Label htmlFor="exigir-comprovativo" className="text-sm font-medium">
+                  Exigir comprovativo para marcar "Submetido"
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Se ativo, não poderás marcar uma obrigação como "Submetida" sem anexar um comprovativo e preencher a data de submissão.
+                </p>
+              </div>
+              <Switch
+                id="exigir-comprovativo"
+                checked={reminderDefaults.exigir_comprovativo_para_submetido}
+                onCheckedChange={(checked) =>
+                  setReminderDefaults({
+                    ...reminderDefaults,
+                    exigir_comprovativo_para_submetido: checked,
+                  })
+                }
+              />
+            </div>
+
+            <Button
+              onClick={saveReminderDefaults}
+              disabled={savingDefaults}
+              className="w-full"
+            >
+              {savingDefaults ? "A guardar..." : "Guardar Configurações"}
+            </Button>
           </CardContent>
         </Card>
 

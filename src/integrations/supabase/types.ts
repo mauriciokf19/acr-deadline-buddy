@@ -164,6 +164,12 @@ export type Database = {
       obrigacoes: {
         Row: {
           aprovado_em: string | null
+          comprovativo_mime: string | null
+          comprovativo_nome_original: string | null
+          comprovativo_size_bytes: number | null
+          comprovativo_storage_path: string | null
+          comprovativo_uploaded_at: string | null
+          comprovativo_uploaded_by: string | null
           concluido_em: string | null
           created_at: string | null
           created_by: string | null
@@ -189,6 +195,12 @@ export type Database = {
         }
         Insert: {
           aprovado_em?: string | null
+          comprovativo_mime?: string | null
+          comprovativo_nome_original?: string | null
+          comprovativo_size_bytes?: number | null
+          comprovativo_storage_path?: string | null
+          comprovativo_uploaded_at?: string | null
+          comprovativo_uploaded_by?: string | null
           concluido_em?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -214,6 +226,12 @@ export type Database = {
         }
         Update: {
           aprovado_em?: string | null
+          comprovativo_mime?: string | null
+          comprovativo_nome_original?: string | null
+          comprovativo_size_bytes?: number | null
+          comprovativo_storage_path?: string | null
+          comprovativo_uploaded_at?: string | null
+          comprovativo_uploaded_by?: string | null
           concluido_em?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -251,6 +269,7 @@ export type Database = {
         Row: {
           created_at: string | null
           email: string
+          exigir_comprovativo_para_submetido: boolean | null
           id: string
           janela_silencio_fim: string | null
           janela_silencio_inicio: string | null
@@ -264,6 +283,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           email: string
+          exigir_comprovativo_para_submetido?: boolean | null
           id: string
           janela_silencio_fim?: string | null
           janela_silencio_inicio?: string | null
@@ -277,6 +297,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           email?: string
+          exigir_comprovativo_para_submetido?: boolean | null
           id?: string
           janela_silencio_fim?: string | null
           janela_silencio_inicio?: string | null
