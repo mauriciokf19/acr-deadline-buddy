@@ -23,13 +23,14 @@ export default function Dashboard() {
 
   const loadData = async () => {
     try {
-      // Load obrigacoes com projetos
+      // Load obrigacoes com projetos (excluir apagadas)
       const { data: obrigacoesData, error: obrigacoesError } = await supabase
         .from("obrigacoes")
         .select(`
           *,
           projeto:projetos(nome, cor)
         `)
+        .is("deleted_at", null)
         .order("deadline_oficial", { ascending: true })
         .limit(5);
 
@@ -37,10 +38,11 @@ export default function Dashboard() {
 
       setObrigacoes(obrigacoesData || []);
 
-      // Calculate stats
+      // Calculate stats (excluir apagadas)
       const { data: allObrigacoes } = await supabase
         .from("obrigacoes")
-        .select("estado, deadline_oficial");
+        .select("estado, deadline_oficial")
+        .is("deleted_at", null);
 
       if (allObrigacoes) {
         const now = new Date();

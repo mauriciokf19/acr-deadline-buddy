@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { hardDeleteObrigacao } from "@/lib/obrigacoesService";
+import { hardDeleteObrigacao, restoreObrigacao } from "@/lib/obrigacoesService";
 
 export default function Definicoes() {
   const { user, signOut } = useAuth();
@@ -27,6 +27,7 @@ export default function Definicoes() {
   const [confirmationText, setConfirmationText] = useState("");
   const [hardDeleteDialogOpen, setHardDeleteDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
 
   useEffect(() => {
     loadDeletedObrigacoes();
@@ -43,6 +44,50 @@ export default function Definicoes() {
       console.error("Erro ao carregar obrigações arquivadas:", error);
     } else {
       setDeletedObrigacoes(data || []);
+    }
+  };
+
+  const handleRestore = async (obrigacao: any) => {
+    setRestoringId(obrigacao.id);
+    const result = await restoreObrigacao({ obrigacaoId: obrigacao.id });
+    setRestoringId(null);
+
+    if (result.success) {
+      const message = `Obrigação recuperada. ${result.affectedTarefas} tarefas e ${result.affectedLembretes} lembretes foram restaurados.`;
+      
+      // Snackbar com opção "Desfazer" (10s)
+      toast.success(message, {
+        duration: 10000,
+        action: {
+          label: "Desfazer",
+          onClick: async () => {
+            // Re-aplicar soft delete
+            await supabase
+              .from("obrigacoes")
+              .update({ deleted_at: new Date().toISOString() })
+              .eq("id", obrigacao.id);
+            
+            await supabase
+              .from("tarefas")
+              .update({ deleted_at: new Date().toISOString() })
+              .eq("obrigacao_id", obrigacao.id)
+              .is("deleted_at", null);
+            
+            await supabase
+              .from("lembretes")
+              .update({ ativo: false, deleted_at: new Date().toISOString() })
+              .eq("obrigacao_id", obrigacao.id)
+              .is("deleted_at", null);
+            
+            toast.success("Recuperação desfeita.");
+            loadDeletedObrigacoes();
+          },
+        },
+      });
+      
+      loadDeletedObrigacoes();
+    } else {
+      toast.error(`Erro ao recuperar: ${result.error}`);
     }
   };
 
@@ -127,17 +172,27 @@ export default function Definicoes() {
                         {new Date(obrigacao.deleted_at).toLocaleDateString("pt-PT")}
                       </p>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => {
-                        setSelectedObrigacao(obrigacao);
-                        setHardDeleteDialogOpen(true);
-                      }}
-                    >
-                      <Trash2 className="mr-1 h-3 w-3" />
-                      Apagar Definitivamente
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleRestore(obrigacao)}
+                        disabled={restoringId === obrigacao.id}
+                      >
+                        {restoringId === obrigacao.id ? "A recuperar..." : "Recuperar"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => {
+                          setSelectedObrigacao(obrigacao);
+                          setHardDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="mr-1 h-3 w-3" />
+                        Apagar Definitivamente
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>

@@ -132,6 +132,20 @@ const logs = await getLogsForEntity("obrigacao", obrigacaoId);
 3. Ao confirmar: snackbar com botão "Desfazer" (10s)
 4. Obrigação desaparece imediatamente da lista (optimistic UI)
 
+### Fluxo de Recuperação (Restore)
+
+1. Utilizador vai a **Definições → Manutenção**
+2. Vê lista de obrigações arquivadas (soft-deleted)
+3. Clica "Recuperar" na obrigação desejada
+4. Sistema:
+   - Limpa `deleted_at` da obrigação e entidades relacionadas
+   - Reativa lembretes
+   - Cria logs de auditoria
+5. Snackbar com opção "Desfazer" (10s):
+   - Permite reverter a recuperação
+   - Re-aplica soft delete se clicado
+6. Obrigação volta a aparecer nas listagens normais
+
 ### Fluxo de Hard Delete
 
 1. Utilizador vai a **Definições → Manutenção**
@@ -174,6 +188,12 @@ Ao adicionar soft delete a uma nova entidade:
 - Verificar se a query tem `.is("deleted_at", null)`
 - Confirmar que `restoreObrigacao` foi executado com sucesso
 - Verificar logs de auditoria
+- Fazer refresh do Dashboard/lista após restaurar
+
+### Dashboard mostra obrigações apagadas
+- Confirmar que todas as queries incluem `.is("deleted_at", null)`
+- Verificar índices parciais (idx_obrigacoes_ativas, idx_tarefas_ativas)
+- Fazer hard reload do frontend se necessário
 
 ### Cascatas não funcionam
 - Confirmar que as foreign keys estão corretas
