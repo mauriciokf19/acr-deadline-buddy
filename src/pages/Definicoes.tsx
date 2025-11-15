@@ -2,7 +2,7 @@ import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { LogOut, User, Trash2, AlertTriangle } from "lucide-react";
+import { LogOut, User, Trash2, AlertTriangle, Bell, Mail } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -20,6 +20,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { hardDeleteObrigacao, restoreObrigacao } from "@/lib/obrigacoesService";
 
+interface ReminderDefaults {
+  lembrete_interna_dias: number;
+  lembrete_oficial_dias: number;
+  lembrete_followup_horas: number;
+  janela_silencio_inicio: string | null;
+  janela_silencio_fim: string | null;
+}
+
 export default function Definicoes() {
   const { user, signOut } = useAuth();
   const [deletedObrigacoes, setDeletedObrigacoes] = useState<any[]>([]);
@@ -28,9 +36,18 @@ export default function Definicoes() {
   const [hardDeleteDialogOpen, setHardDeleteDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [reminderDefaults, setReminderDefaults] = useState<ReminderDefaults>({
+    lembrete_interna_dias: 3,
+    lembrete_oficial_dias: 5,
+    lembrete_followup_horas: 48,
+    janela_silencio_inicio: null,
+    janela_silencio_fim: null,
+  });
+  const [savingDefaults, setSavingDefaults] = useState(false);
 
   useEffect(() => {
     loadDeletedObrigacoes();
+    loadReminderDefaults();
   }, []);
 
   const loadDeletedObrigacoes = async () => {
@@ -44,6 +61,77 @@ export default function Definicoes() {
       console.error("Erro ao carregar obrigações arquivadas:", error);
     } else {
       setDeletedObrigacoes(data || []);
+    }
+  };
+
+  const loadReminderDefaults = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("lembrete_interna_dias, lembrete_oficial_dias, lembrete_followup_horas, janela_silencio_inicio, janela_silencio_fim")
+      .eq("id", user.id)
+      .single();
+
+    if (error) {
+      console.error("Erro ao carregar defaults:", error);
+    } else if (data) {
+      setReminderDefaults({
+        lembrete_interna_dias: data.lembrete_interna_dias ?? 3,
+        lembrete_oficial_dias: data.lembrete_oficial_dias ?? 5,
+        lembrete_followup_horas: data.lembrete_followup_horas ?? 48,
+        janela_silencio_inicio: data.janela_silencio_inicio,
+        janela_silencio_fim: data.janela_silencio_fim,
+      });
+    }
+  };
+
+  const saveReminderDefaults = async () => {
+    if (!user) return;
+    
+    setSavingDefaults(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          lembrete_interna_dias: reminderDefaults.lembrete_interna_dias,
+          lembrete_oficial_dias: reminderDefaults.lembrete_oficial_dias,
+          lembrete_followup_horas: reminderDefaults.lembrete_followup_horas,
+          janela_silencio_inicio: reminderDefaults.janela_silencio_inicio,
+          janela_silencio_fim: reminderDefaults.janela_silencio_fim,
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      toast.success("Configurações de lembretes guardadas.");
+    } catch (error) {
+      console.error("Erro ao guardar defaults:", error);
+      toast.error("Erro ao guardar configurações.");
+    } finally {
+      setSavingDefaults(false);
+    }
+  };
+
+  const sendTestReminder = async () => {
+    if (!user) return;
+    
+    try {
+      await supabase.from("alertas").insert({
+        user_id: user.id,
+        entidade_tipo: "obrigacao",
+        entidade_id: "00000000-0000-0000-0000-000000000000", // dummy
+        canal: "email",
+        titulo: "Teste de Lembrete",
+        mensagem: "Este é um lembrete de teste enviado a partir das Definições.\n\nSe vir esta mensagem, o sistema de lembretes está a funcionar corretamente!",
+        disparado_em: new Date().toISOString(),
+        visto: false,
+      });
+
+      toast.success("Lembrete de teste enviado! Verifica a página Alertas.");
+    } catch (error) {
+      console.error("Erro ao enviar teste:", error);
+      toast.error("Erro ao enviar lembrete de teste.");
     }
   };
 
@@ -76,7 +164,8 @@ export default function Definicoes() {
             await supabase
               .from("lembretes")
               .update({ ativo: false, deleted_at: new Date().toISOString() })
-              .eq("obrigacao_id", obrigacao.id)
+              .eq("entidade_tipo", "obrigacao")
+              .eq("entidade_id", obrigacao.id)
               .is("deleted_at", null);
             
             toast.success("Recuperação desfeita.");
@@ -135,6 +224,132 @@ export default function Definicoes() {
             <div className="text-sm">
               <span className="text-muted-foreground">Email: </span>
               <span className="font-medium">{user?.email}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Bell className="h-5 w-5" />
+              Lembretes (Defaults)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Configurações padrão para criar lembretes automaticamente.
+            </p>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="interna-dias">Deadline Interna (dias antes)</Label>
+                <Input
+                  id="interna-dias"
+                  type="number"
+                  min="1"
+                  max="30"
+                  value={reminderDefaults.lembrete_interna_dias}
+                  onChange={(e) =>
+                    setReminderDefaults({
+                      ...reminderDefaults,
+                      lembrete_interna_dias: parseInt(e.target.value) || 3,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="oficial-dias">Deadline Oficial (dias antes)</Label>
+                <Input
+                  id="oficial-dias"
+                  type="number"
+                  min="1"
+                  max="30"
+                  value={reminderDefaults.lembrete_oficial_dias}
+                  onChange={(e) =>
+                    setReminderDefaults({
+                      ...reminderDefaults,
+                      lembrete_oficial_dias: parseInt(e.target.value) || 5,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="followup-horas">Follow-up Senior (horas após envio)</Label>
+                <Input
+                  id="followup-horas"
+                  type="number"
+                  min="1"
+                  max="168"
+                  value={reminderDefaults.lembrete_followup_horas}
+                  onChange={(e) =>
+                    setReminderDefaults({
+                      ...reminderDefaults,
+                      lembrete_followup_horas: parseInt(e.target.value) || 48,
+                    })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Janela de Silêncio (opcional)</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Período em que os lembretes não serão disparados (ex: 20:00-08:00)
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="silencio-inicio" className="text-xs">
+                    Início
+                  </Label>
+                  <Input
+                    id="silencio-inicio"
+                    type="time"
+                    value={reminderDefaults.janela_silencio_inicio || ""}
+                    onChange={(e) =>
+                      setReminderDefaults({
+                        ...reminderDefaults,
+                        janela_silencio_inicio: e.target.value || null,
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="silencio-fim" className="text-xs">
+                    Fim
+                  </Label>
+                  <Input
+                    id="silencio-fim"
+                    type="time"
+                    value={reminderDefaults.janela_silencio_fim || ""}
+                    onChange={(e) =>
+                      setReminderDefaults({
+                        ...reminderDefaults,
+                        janela_silencio_fim: e.target.value || null,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={saveReminderDefaults}
+                disabled={savingDefaults}
+                className="flex-1"
+              >
+                {savingDefaults ? "A guardar..." : "Guardar Defaults"}
+              </Button>
+              <Button
+                onClick={sendTestReminder}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Mail className="h-4 w-4" />
+                Enviar Teste
+              </Button>
             </div>
           </CardContent>
         </Card>
