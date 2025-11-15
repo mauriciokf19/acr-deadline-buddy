@@ -2,7 +2,7 @@ import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { LogOut, User, Trash2, AlertTriangle, Bell, Mail } from "lucide-react";
+import { LogOut, User, Trash2, AlertTriangle, Bell, Mail, RefreshCw } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -132,6 +132,29 @@ export default function Definicoes() {
     } catch (error) {
       console.error("Erro ao enviar teste:", error);
       toast.error("Erro ao enviar lembrete de teste.");
+    }
+  };
+
+  const handleBackfillReminders = async () => {
+    setLoading(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke('backfill-reminders', {
+        headers: {
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+      });
+      
+      if (error) throw error;
+      
+      toast.success(
+        `✅ Criados ${data.criados} lembretes (interna/oficial). Ver detalhes em /dev → Debug Lembretes.`,
+        { duration: 5000 }
+      );
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao criar lembretes");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -334,7 +357,7 @@ export default function Definicoes() {
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button
                 onClick={saveReminderDefaults}
                 disabled={savingDefaults}
@@ -349,6 +372,15 @@ export default function Definicoes() {
               >
                 <Mail className="h-4 w-4" />
                 Enviar Teste
+              </Button>
+              <Button
+                onClick={handleBackfillReminders}
+                variant="secondary"
+                disabled={loading}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Criar para Existentes
               </Button>
             </div>
           </CardContent>
