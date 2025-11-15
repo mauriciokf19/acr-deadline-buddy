@@ -19,8 +19,10 @@ import { toast } from "sonner";
 import { createLog } from "@/lib/logUtils";
 import { softDeleteObrigacao, restoreObrigacao } from "@/lib/obrigacoesService";
 import { startOfDay, endOfDay, addDays } from "date-fns";
+import { useSearchParams } from "react-router-dom";
 
 export default function Obrigacoes() {
+  const [searchParams] = useSearchParams();
   const [obrigacoes, setObrigacoes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -30,7 +32,25 @@ export default function Obrigacoes() {
   const [obrigacaoToDelete, setObrigacaoToDelete] = useState<any>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [profileSettings, setProfileSettings] = useState<any>(null);
+  const [selectedObrigacaoId, setSelectedObrigacaoId] = useState<string | null>(null);
   const { filters, updateFilter, clearFilters } = useObrigacoesFilters();
+
+  // Processar deep links
+  useEffect(() => {
+    const prazoParam = searchParams.get("prazo");
+    const projetoParam = searchParams.get("projeto_id");
+    const idParam = searchParams.get("id");
+
+    if (prazoParam && prazoParam !== filters.prazo) {
+      updateFilter("prazo", prazoParam);
+    }
+    if (projetoParam && projetoParam !== filters.projeto_id) {
+      updateFilter("projeto_id", projetoParam);
+    }
+    if (idParam) {
+      setSelectedObrigacaoId(idParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     loadObrigacoes();
@@ -97,6 +117,8 @@ export default function Obrigacoes() {
       } else if (filters.prazo === "semana") {
         query = query.gte("deadline_oficial", now.toISOString())
                      .lte("deadline_oficial", addDays(now, 7).toISOString());
+      } else if (filters.prazo === "futuro") {
+        query = query.gt("deadline_oficial", addDays(now, 7).toISOString());
       }
       // "todos" shows all obligations
 
@@ -322,6 +344,7 @@ export default function Obrigacoes() {
                   <SelectItem value="atrasadas">Atrasadas</SelectItem>
                   <SelectItem value="hoje">Hoje</SelectItem>
                   <SelectItem value="semana">Esta semana</SelectItem>
+                  <SelectItem value="futuro">No Prazo</SelectItem>
                 </SelectContent>
               </Select>
 
