@@ -42,6 +42,7 @@ export default function Tarefas() {
           *,
           obrigacao:obrigacoes(titulo, projeto:projetos(nome))
         `)
+        .is("deleted_at", null)
         .order("deadline", { ascending: true, nullsFirst: false });
 
       if (filters.search) {

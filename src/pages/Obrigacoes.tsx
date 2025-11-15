@@ -12,10 +12,12 @@ import {
 import { Plus, Search, Filter, X } from "lucide-react";
 import { ObrigacaoCard } from "@/components/ObrigacaoCard";
 import { ObrigacaoForm } from "@/components/ObrigacaoForm";
+import { DeleteObrigacaoDialog } from "@/components/DeleteObrigacaoDialog";
 import { useObrigacoesFilters } from "@/hooks/useObrigacoesFilters";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { createLog } from "@/lib/logUtils";
+import { softDeleteObrigacao, restoreObrigacao } from "@/lib/obrigacoesService";
 import { startOfDay, endOfDay, addDays } from "date-fns";
 
 export default function Obrigacoes() {
@@ -24,6 +26,9 @@ export default function Obrigacoes() {
   const [showForm, setShowForm] = useState(false);
   const [editingObrigacao, setEditingObrigacao] = useState<any>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [obrigacaoToDelete, setObrigacaoToDelete] = useState<any>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const { filters, updateFilter, clearFilters } = useObrigacoesFilters();
 
   useEffect(() => {
@@ -39,6 +44,7 @@ export default function Obrigacoes() {
           *,
           projeto:projetos(nome, cor)
         `)
+        .is("deleted_at", null)
         .order("deadline_oficial");
 
       if (filters.search) {
@@ -142,6 +148,59 @@ export default function Obrigacoes() {
     } catch (error: any) {
       console.error("Erro ao atualizar obrigação:", error);
       toast.error("Erro ao atualizar obrigação");
+    }
+  };
+
+  const handleEdit = (obrigacao: any) => {
+    setEditingObrigacao(obrigacao);
+    setShowForm(true);
+  };
+
+  const handleDelete = (obrigacao: any) => {
+    setObrigacaoToDelete(obrigacao);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!obrigacaoToDelete) return;
+
+    setDeleteLoading(true);
+    const result = await softDeleteObrigacao({ obrigacaoId: obrigacaoToDelete.id });
+    setDeleteLoading(false);
+
+    if (result.success) {
+      // Mostrar snackbar com opção de desfazer
+      const toastId = toast.success(
+        `Obrigação arquivada. ${result.affectedTarefas} tarefas e ${result.affectedLembretes} lembretes também foram arquivados.`,
+        {
+          duration: 10000,
+          action: {
+            label: "Desfazer",
+            onClick: () => handleRestore(obrigacaoToDelete.id, toastId),
+          },
+        }
+      );
+
+      setDeleteDialogOpen(false);
+      setObrigacaoToDelete(null);
+      loadObrigacoes();
+    } else {
+      toast.error(`Erro ao apagar: ${result.error}`);
+    }
+  };
+
+  const handleRestore = async (obrigacaoId: string, toastId: string | number) => {
+    toast.dismiss(toastId);
+    
+    const result = await restoreObrigacao({ obrigacaoId });
+    
+    if (result.success) {
+      toast.success(
+        `Obrigação restaurada. ${result.affectedTarefas} tarefas e ${result.affectedLembretes} lembretes também foram restaurados.`
+      );
+      loadObrigacoes();
+    } else {
+      toast.error(`Erro ao restaurar: ${result.error}`);
     }
   };
 
@@ -260,6 +319,8 @@ export default function Obrigacoes() {
                 key={obrigacao.id}
                 obrigacao={obrigacao}
                 onQuickAction={(action) => handleQuickAction(obrigacao, action)}
+                onEdit={() => handleEdit(obrigacao)}
+                onDelete={() => handleDelete(obrigacao)}
               />
             ))}
           </div>
@@ -268,9 +329,22 @@ export default function Obrigacoes() {
 
       <ObrigacaoForm
         open={showForm}
-        onOpenChange={setShowForm}
+        onOpenChange={(open) => {
+          setShowForm(open);
+          if (!open) setEditingObrigacao(null);
+        }}
         obrigacao={editingObrigacao}
         onSuccess={loadObrigacoes}
+      />
+
+      <DeleteObrigacaoDialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open);
+          if (!open) setObrigacaoToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        loading={deleteLoading}
       />
     </Layout>
   );

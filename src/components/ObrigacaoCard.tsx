@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, AlertCircle } from "lucide-react";
+import { Calendar, Clock, AlertCircle, Edit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,8 @@ interface Obrigacao {
 interface ObrigacaoCardProps {
   obrigacao: Obrigacao;
   onQuickAction?: (action: string) => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 const estadoColors: Record<string, string> = {
@@ -45,7 +47,7 @@ const tipoLabels: Record<string, string> = {
   outro: "Outro",
 };
 
-export function ObrigacaoCard({ obrigacao, onQuickAction }: ObrigacaoCardProps) {
+export function ObrigacaoCard({ obrigacao, onQuickAction, onEdit, onDelete }: ObrigacaoCardProps) {
   const isAtrasado = new Date(obrigacao.deadline_oficial) < new Date() && 
                      obrigacao.estado !== "concluido";
 
@@ -156,6 +158,27 @@ export function ObrigacaoCard({ obrigacao, onQuickAction }: ObrigacaoCardProps) 
             </Button>
           </div>
         )}
+
+        <div className="flex gap-2 pt-2 border-t">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="flex-1 text-xs"
+            onClick={onEdit}
+          >
+            <Edit className="mr-1 h-3 w-3" />
+            Editar
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="flex-1 text-xs text-destructive hover:text-destructive"
+            onClick={onDelete}
+          >
+            <Trash2 className="mr-1 h-3 w-3" />
+            Apagar
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

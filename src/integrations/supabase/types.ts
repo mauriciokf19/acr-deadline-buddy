@@ -22,6 +22,7 @@ export type Database = {
           id: string
           nif: string | null
           nome: string
+          owner_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -31,6 +32,7 @@ export type Database = {
           id?: string
           nif?: string | null
           nome: string
+          owner_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -40,6 +42,7 @@ export type Database = {
           id?: string
           nif?: string | null
           nome?: string
+          owner_id?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -48,28 +51,34 @@ export type Database = {
         Row: {
           created_at: string | null
           data_envio: string
+          deleted_at: string | null
           enviado: boolean | null
           id: string
           mensagem: string | null
           obrigacao_id: string | null
+          owner_id: string | null
           tipo: string
         }
         Insert: {
           created_at?: string | null
           data_envio: string
+          deleted_at?: string | null
           enviado?: boolean | null
           id?: string
           mensagem?: string | null
           obrigacao_id?: string | null
+          owner_id?: string | null
           tipo: string
         }
         Update: {
           created_at?: string | null
           data_envio?: string
+          deleted_at?: string | null
           enviado?: boolean | null
           id?: string
           mensagem?: string | null
           obrigacao_id?: string | null
+          owner_id?: string | null
           tipo?: string
         }
         Relationships: [
@@ -121,10 +130,12 @@ export type Database = {
           deadline_interna: string
           deadline_oficial: string
           deadline_revisao_senior: string
+          deleted_at: string | null
           enviado_senior_em: string | null
           estado: Database["public"]["Enums"]["estado_obrigacao"] | null
           id: string
           notas: string | null
+          owner_id: string | null
           periodicidade: Database["public"]["Enums"]["periodicidade"]
           periodo_referencia: string | null
           projeto_id: string
@@ -142,10 +153,12 @@ export type Database = {
           deadline_interna: string
           deadline_oficial: string
           deadline_revisao_senior: string
+          deleted_at?: string | null
           enviado_senior_em?: string | null
           estado?: Database["public"]["Enums"]["estado_obrigacao"] | null
           id?: string
           notas?: string | null
+          owner_id?: string | null
           periodicidade: Database["public"]["Enums"]["periodicidade"]
           periodo_referencia?: string | null
           projeto_id: string
@@ -163,10 +176,12 @@ export type Database = {
           deadline_interna?: string
           deadline_oficial?: string
           deadline_revisao_senior?: string
+          deleted_at?: string | null
           enviado_senior_em?: string | null
           estado?: Database["public"]["Enums"]["estado_obrigacao"] | null
           id?: string
           notas?: string | null
+          owner_id?: string | null
           periodicidade?: Database["public"]["Enums"]["periodicidade"]
           periodo_referencia?: string | null
           projeto_id?: string
@@ -215,6 +230,7 @@ export type Database = {
       }
       projetos: {
         Row: {
+          ano_fiscal: number | null
           ativo: boolean | null
           cliente_id: string | null
           cor: string | null
@@ -223,9 +239,12 @@ export type Database = {
           descricao: string | null
           id: string
           nome: string
+          owner_id: string | null
+          pais: string | null
           updated_at: string | null
         }
         Insert: {
+          ano_fiscal?: number | null
           ativo?: boolean | null
           cliente_id?: string | null
           cor?: string | null
@@ -234,9 +253,12 @@ export type Database = {
           descricao?: string | null
           id?: string
           nome: string
+          owner_id?: string | null
+          pais?: string | null
           updated_at?: string | null
         }
         Update: {
+          ano_fiscal?: number | null
           ativo?: boolean | null
           cliente_id?: string | null
           cor?: string | null
@@ -245,6 +267,8 @@ export type Database = {
           descricao?: string | null
           id?: string
           nome?: string
+          owner_id?: string | null
+          pais?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -262,9 +286,11 @@ export type Database = {
           concluida: boolean | null
           created_at: string | null
           deadline: string | null
+          deleted_at: string | null
           descricao: string | null
           id: string
           obrigacao_id: string | null
+          owner_id: string | null
           responsavel_id: string | null
           titulo: string
           updated_at: string | null
@@ -273,9 +299,11 @@ export type Database = {
           concluida?: boolean | null
           created_at?: string | null
           deadline?: string | null
+          deleted_at?: string | null
           descricao?: string | null
           id?: string
           obrigacao_id?: string | null
+          owner_id?: string | null
           responsavel_id?: string | null
           titulo: string
           updated_at?: string | null
@@ -284,9 +312,11 @@ export type Database = {
           concluida?: boolean | null
           created_at?: string | null
           deadline?: string | null
+          deleted_at?: string | null
           descricao?: string | null
           id?: string
           obrigacao_id?: string | null
+          owner_id?: string | null
           responsavel_id?: string | null
           titulo?: string
           updated_at?: string | null
@@ -300,6 +330,102 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      template_instancias: {
+        Row: {
+          ano_fiscal: number
+          created_at: string
+          id: string
+          obrigacoes_geradas: number
+          owner_id: string | null
+          parametros_json: Json
+          projeto_id: string
+          template_id: string
+          user_id: string | null
+        }
+        Insert: {
+          ano_fiscal: number
+          created_at?: string
+          id?: string
+          obrigacoes_geradas?: number
+          owner_id?: string | null
+          parametros_json: Json
+          projeto_id: string
+          template_id: string
+          user_id?: string | null
+        }
+        Update: {
+          ano_fiscal?: number
+          created_at?: string
+          id?: string
+          obrigacoes_geradas?: number
+          owner_id?: string | null
+          parametros_json?: Json
+          projeto_id?: string
+          template_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_instancias_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "template_instancias_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      templates: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          notas: string | null
+          offset_interna: number
+          offset_revisao: number
+          owner_id: string | null
+          pais: string
+          periodicidade: Database["public"]["Enums"]["periodicidade"]
+          regra_deadline_oficial: string
+          tipo_obrigacao: Database["public"]["Enums"]["tipo_obrigacao"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          notas?: string | null
+          offset_interna?: number
+          offset_revisao?: number
+          owner_id?: string | null
+          pais?: string
+          periodicidade: Database["public"]["Enums"]["periodicidade"]
+          regra_deadline_oficial: string
+          tipo_obrigacao: Database["public"]["Enums"]["tipo_obrigacao"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          notas?: string | null
+          offset_interna?: number
+          offset_revisao?: number
+          owner_id?: string | null
+          pais?: string
+          periodicidade?: Database["public"]["Enums"]["periodicidade"]
+          regra_deadline_oficial?: string
+          tipo_obrigacao?: Database["public"]["Enums"]["tipo_obrigacao"]
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {

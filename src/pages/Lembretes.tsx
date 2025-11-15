@@ -42,6 +42,7 @@ export default function Lembretes() {
           obrigacao:obrigacoes(titulo),
           tarefa:tarefas(titulo)
         `)
+        .is("deleted_at", null)
         .order("created_at", { ascending: false });
 
       if (filters.search) {
