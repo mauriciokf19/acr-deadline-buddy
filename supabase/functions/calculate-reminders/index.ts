@@ -10,22 +10,28 @@ interface RegraParsed {
 }
 
 function parseRegra(regra: string): RegraParsed | null {
-  const normalized = regra.toLowerCase().trim();
+  // Normalizar: lowercase, remover acentos, normalizar espaços
+  const normalized = regra
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove diacríticos
+    .replace(/\s+/g, ' ')
+    .trim();
   
-  // Pattern: "Xd antes de deadline_interna"
-  const internaMatch = normalized.match(/(\d+)\s*(d|dias?)\s*antes\s*de\s*deadline[_\s]?interna/);
+  // Pattern: "Xd antes de deadline_interna" ou "X dias antes de/da deadline interna"
+  const internaMatch = normalized.match(/(\d+)\s*(d|dias?)\s*antes\s*(de|da)?\s*(?:a\s+)?deadline[_\s]?interna/);
   if (internaMatch) {
     return { tipo: 'INTERNA', offset: parseInt(internaMatch[1]), unidade: 'd' };
   }
   
-  // Pattern: "Xd antes de deadline_oficial"
-  const oficialMatch = normalized.match(/(\d+)\s*(d|dias?)\s*antes\s*de\s*deadline[_\s]?oficial/);
+  // Pattern: "Xd antes de deadline_oficial" ou "X dias antes de/da deadline oficial"
+  const oficialMatch = normalized.match(/(\d+)\s*(d|dias?)\s*antes\s*(de|da)?\s*(?:a\s+)?deadline[_\s]?oficial/);
   if (oficialMatch) {
     return { tipo: 'OFICIAL', offset: parseInt(oficialMatch[1]), unidade: 'd' };
   }
   
-  // Pattern: "Xh após envio_senior sem feedback"
-  const followupMatch = normalized.match(/(\d+)\s*(h|horas?)\s*ap[óo]s\s*envio[_\s]?senior/);
+  // Pattern: "Xh após envio_senior" ou "X horas após envio ao senior sem feedback"
+  const followupMatch = normalized.match(/(\d+)\s*(h|horas?)\s*apos\s*(o\s+)?envio(\s+ao)?[_\s]?senior/);
   if (followupMatch) {
     return { tipo: 'FOLLOWUP', offset: parseInt(followupMatch[1]), unidade: 'h' };
   }
@@ -43,23 +49,44 @@ function calcularProximoDisparo(
   
   if (parsed.tipo === 'INTERNA' && obrigacao.deadline_interna) {
     const deadline = new Date(obrigacao.deadline_interna);
+    // Para deadlines all-day, calcular X dias antes e definir hora 08:00 Europe/Lisbon
     dataAlvo = new Date(deadline.getTime() - parsed.offset * 24 * 60 * 60 * 1000);
+    // Converter para Europe/Lisbon e definir 08:00
+    const lisbonDate = new Date(dataAlvo.toLocaleString('en-US', { timeZone: 'Europe/Lisbon' }));
+    lisbonDate.setHours(8, 0, 0, 0);
+    dataAlvo = lisbonDate;
   } else if (parsed.tipo === 'OFICIAL' && obrigacao.deadline_oficial) {
     const deadline = new Date(obrigacao.deadline_oficial);
+    // Para deadlines all-day, calcular X dias antes e definir hora 08:00 Europe/Lisbon
     dataAlvo = new Date(deadline.getTime() - parsed.offset * 24 * 60 * 60 * 1000);
+    // Converter para Europe/Lisbon e definir 08:00
+    const lisbonDate = new Date(dataAlvo.toLocaleString('en-US', { timeZone: 'Europe/Lisbon' }));
+    lisbonDate.setHours(8, 0, 0, 0);
+    dataAlvo = lisbonDate;
   } else if (parsed.tipo === 'FOLLOWUP' && obrigacao.data_envio_senior && !obrigacao.data_feedback_senior) {
     const envio = new Date(obrigacao.data_envio_senior);
     dataAlvo = new Date(envio.getTime() + parsed.offset * 60 * 60 * 1000);
   }
   
-  if (!dataAlvo || dataAlvo < new Date()) {
+  if (!dataAlvo) {
     return null;
   }
   
   // Aplicar janela de silêncio
   if (silencioInicio && silencioFim) {
-    const dataAjustada = ajustarParaJanelaSilencio(dataAlvo, silencioInicio, silencioFim);
-    return dataAjustada;
+    dataAlvo = ajustarParaJanelaSilencio(dataAlvo, silencioInicio, silencioFim);
+  }
+  
+  // Se for passado mas recente (últimas 24h), permitir disparo imediato
+  const agora = new Date();
+  const umDiaAtras = new Date(agora.getTime() - 24 * 60 * 60 * 1000);
+  if (dataAlvo < agora && dataAlvo > umDiaAtras) {
+    return agora; // Disparar imediatamente
+  }
+  
+  // Se for muito no passado, ignorar
+  if (dataAlvo < agora) {
+    return null;
   }
   
   return dataAlvo;
