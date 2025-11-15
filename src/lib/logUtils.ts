@@ -7,7 +7,10 @@ export type LogAction =
   | "duplicar" 
   | "mudanca_estado" 
   | "upload"
-  | "delete";
+  | "delete"
+  | "soft_delete"
+  | "restore"
+  | "hard_delete";
 
 export type LogEntityType = 
   | "projeto" 
@@ -90,6 +93,9 @@ export function translateAction(acao: LogAction): string {
     mudanca_estado: "Alterou o estado",
     upload: "Carregou ficheiro",
     delete: "Eliminou",
+    soft_delete: "Arquivou (soft delete)",
+    restore: "Restaurou",
+    hard_delete: "Eliminou permanentemente",
   };
   
   return translations[acao] || acao;
