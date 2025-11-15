@@ -127,62 +127,95 @@ export function CalendarioFilters({
 
           <div className="grid gap-2">
             <Label>Projeto</Label>
-            <Select
-              value={projetos[0] || ""}
-              onValueChange={(v) => onProjetosChange(v ? [v] : [])}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Todos os projetos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
-                {projetosDisponiveis.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <Select
+                value={projetos[0] || undefined}
+                onValueChange={(v) => onProjetosChange(v ? [v] : [])}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os projetos" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projetosDisponiveis.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {projetos.length > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => onProjetosChange([])}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="grid gap-2">
             <Label>Tipo de Obrigação</Label>
-            <Select
-              value={tipos[0] || ""}
-              onValueChange={(v) => onTiposChange(v ? [v] : [])}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Todos os tipos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
-                {tiposDisponiveis.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>
-                    {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <Select
+                value={tipos[0] || undefined}
+                onValueChange={(v) => onTiposChange(v ? [v] : [])}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os tipos" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tiposDisponiveis.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {tipos.length > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => onTiposChange([])}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="grid gap-2">
             <Label>Estado</Label>
-            <Select
-              value={estados[0] || ""}
-              onValueChange={(v) => onEstadosChange(v ? [v] : [])}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Todos os estados" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
-                {estadosDisponiveis.map((e) => (
-                  <SelectItem key={e.value} value={e.value}>
-                    {e.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <Select
+                value={estados[0] || undefined}
+                onValueChange={(v) => onEstadosChange(v ? [v] : [])}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os estados" />
+                </SelectTrigger>
+                <SelectContent>
+                  {estadosDisponiveis.map((e) => (
+                    <SelectItem key={e.value} value={e.value}>
+                      {e.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {estados.length > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => onEstadosChange([])}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center justify-between">
