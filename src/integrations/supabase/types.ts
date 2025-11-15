@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      alertas: {
+        Row: {
+          canal: string
+          created_at: string | null
+          disparado_em: string
+          entidade_id: string
+          entidade_tipo: string
+          id: string
+          mensagem: string
+          titulo: string
+          user_id: string
+          visto: boolean | null
+        }
+        Insert: {
+          canal: string
+          created_at?: string | null
+          disparado_em?: string
+          entidade_id: string
+          entidade_tipo: string
+          id?: string
+          mensagem: string
+          titulo: string
+          user_id: string
+          visto?: boolean | null
+        }
+        Update: {
+          canal?: string
+          created_at?: string | null
+          disparado_em?: string
+          entidade_id?: string
+          entidade_tipo?: string
+          id?: string
+          mensagem?: string
+          titulo?: string
+          user_id?: string
+          visto?: boolean | null
+        }
+        Relationships: []
+      }
       clientes: {
         Row: {
           contacto: string | null
@@ -49,47 +88,48 @@ export type Database = {
       }
       lembretes: {
         Row: {
+          ativo: boolean | null
+          canal: string
           created_at: string | null
-          data_envio: string
           deleted_at: string | null
-          enviado: boolean | null
+          entidade_id: string
+          entidade_tipo: string
           id: string
-          mensagem: string | null
-          obrigacao_id: string | null
           owner_id: string | null
-          tipo: string
+          proximo_disparo_em: string | null
+          regra: string
+          ultimo_disparo_em: string | null
+          updated_at: string | null
         }
         Insert: {
+          ativo?: boolean | null
+          canal: string
           created_at?: string | null
-          data_envio: string
           deleted_at?: string | null
-          enviado?: boolean | null
+          entidade_id: string
+          entidade_tipo: string
           id?: string
-          mensagem?: string | null
-          obrigacao_id?: string | null
           owner_id?: string | null
-          tipo: string
+          proximo_disparo_em?: string | null
+          regra: string
+          ultimo_disparo_em?: string | null
+          updated_at?: string | null
         }
         Update: {
+          ativo?: boolean | null
+          canal?: string
           created_at?: string | null
-          data_envio?: string
           deleted_at?: string | null
-          enviado?: boolean | null
+          entidade_id?: string
+          entidade_tipo?: string
           id?: string
-          mensagem?: string | null
-          obrigacao_id?: string | null
           owner_id?: string | null
-          tipo?: string
+          proximo_disparo_em?: string | null
+          regra?: string
+          ultimo_disparo_em?: string | null
+          updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "lembretes_obrigacao_id_fkey"
-            columns: ["obrigacao_id"]
-            isOneToOne: false
-            referencedRelation: "obrigacoes"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       logs: {
         Row: {
@@ -127,6 +167,8 @@ export type Database = {
           concluido_em: string | null
           created_at: string | null
           created_by: string | null
+          data_envio_senior: string | null
+          data_feedback_senior: string | null
           deadline_interna: string
           deadline_oficial: string
           deadline_revisao_senior: string
@@ -150,6 +192,8 @@ export type Database = {
           concluido_em?: string | null
           created_at?: string | null
           created_by?: string | null
+          data_envio_senior?: string | null
+          data_feedback_senior?: string | null
           deadline_interna: string
           deadline_oficial: string
           deadline_revisao_senior: string
@@ -173,6 +217,8 @@ export type Database = {
           concluido_em?: string | null
           created_at?: string | null
           created_by?: string | null
+          data_envio_senior?: string | null
+          data_feedback_senior?: string | null
           deadline_interna?: string
           deadline_oficial?: string
           deadline_revisao_senior?: string
@@ -206,6 +252,11 @@ export type Database = {
           created_at: string | null
           email: string
           id: string
+          janela_silencio_fim: string | null
+          janela_silencio_inicio: string | null
+          lembrete_followup_horas: number | null
+          lembrete_interna_dias: number | null
+          lembrete_oficial_dias: number | null
           nome: string
           role: string | null
           updated_at: string | null
@@ -214,6 +265,11 @@ export type Database = {
           created_at?: string | null
           email: string
           id: string
+          janela_silencio_fim?: string | null
+          janela_silencio_inicio?: string | null
+          lembrete_followup_horas?: number | null
+          lembrete_interna_dias?: number | null
+          lembrete_oficial_dias?: number | null
           nome: string
           role?: string | null
           updated_at?: string | null
@@ -222,6 +278,11 @@ export type Database = {
           created_at?: string | null
           email?: string
           id?: string
+          janela_silencio_fim?: string | null
+          janela_silencio_inicio?: string | null
+          lembrete_followup_horas?: number | null
+          lembrete_interna_dias?: number | null
+          lembrete_oficial_dias?: number | null
           nome?: string
           role?: string | null
           updated_at?: string | null

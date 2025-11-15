@@ -43,7 +43,8 @@ export async function softDeleteObrigacao({
     const { data: lembretes, error: lembretesError } = await supabase
       .from("lembretes")
       .update({ ativo: false, deleted_at: now })
-      .eq("obrigacao_id", obrigacaoId)
+      .eq("entidade_tipo", "obrigacao")
+      .eq("entidade_id", obrigacaoId)
       .is("deleted_at", null)
       .select("id");
 
@@ -129,7 +130,8 @@ export async function restoreObrigacao({
     const { data: lembretes, error: lembretesError } = await supabase
       .from("lembretes")
       .update({ ativo: true, deleted_at: null })
-      .eq("obrigacao_id", obrigacaoId)
+      .eq("entidade_tipo", "obrigacao")
+      .eq("entidade_id", obrigacaoId)
       .not("deleted_at", "is", null)
       .select("id");
 
@@ -178,7 +180,8 @@ export async function hardDeleteObrigacao({
     const { data: lembretes } = await supabase
       .from("lembretes")
       .select("id")
-      .eq("obrigacao_id", obrigacaoId);
+      .eq("entidade_tipo", "obrigacao")
+      .eq("entidade_id", obrigacaoId);
 
     // 2. Apagar tarefas
     const { error: tarefasError } = await supabase
@@ -192,7 +195,8 @@ export async function hardDeleteObrigacao({
     const { error: lembretesError } = await supabase
       .from("lembretes")
       .delete()
-      .eq("obrigacao_id", obrigacaoId);
+      .eq("entidade_tipo", "obrigacao")
+      .eq("entidade_id", obrigacaoId);
 
     if (lembretesError) throw lembretesError;
 
