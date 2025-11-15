@@ -10,7 +10,8 @@ export type LogAction =
   | "delete"
   | "soft_delete"
   | "restore"
-  | "hard_delete";
+  | "hard_delete"
+  | "submissao_bloqueada";
 
 export type LogEntityType = 
   | "projeto" 
@@ -96,6 +97,7 @@ export function translateAction(acao: LogAction): string {
     soft_delete: "Arquivou (soft delete)",
     restore: "Restaurou",
     hard_delete: "Eliminou permanentemente",
+    submissao_bloqueada: "Tentativa de submissão bloqueada",
   };
   
   return translations[acao] || acao;
