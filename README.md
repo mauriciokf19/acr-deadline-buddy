@@ -60,6 +60,43 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Testing & Quality Assurance
+
+This project includes a comprehensive QA system with automated tests.
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run unit tests
+npm run test:unit
+
+# Run E2E tests
+npm run test:e2e
+
+# Run tests with UI
+npm run test:ui
+
+# Run tests with coverage
+npm run test:coverage
+```
+
+### QA Dashboard
+
+Access the QA dashboard at `/qa` to:
+- Seed deterministic test data
+- Run automated test suites
+- View test results and statistics
+- Apply auto-corrections
+
+### CI/CD
+
+Tests run automatically on every push via GitHub Actions. Check the badge at the top of this README for current CI status.
+
+For detailed testing documentation, see [README_QA.md](./README_QA.md).
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/64802b36-4342-4c99-a844-46ecb42ed431) and click on Share -> Publish.

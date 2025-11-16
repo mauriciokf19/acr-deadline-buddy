@@ -16,6 +16,7 @@ import Alertas from "./pages/Alertas";
 import Definicoes from "./pages/Definicoes";
 import Templates from "./pages/Templates";
 import Dev from "./pages/Dev";
+import QA from "./pages/QA";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -106,6 +107,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Dev />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/qa"
+              element={
+                <ProtectedRoute>
+                  <QA />
                 </ProtectedRoute>
               }
             />
