@@ -277,7 +277,6 @@ export type Database = {
           lembrete_interna_dias: number | null
           lembrete_oficial_dias: number | null
           nome: string
-          role: string | null
           updated_at: string | null
         }
         Insert: {
@@ -291,7 +290,6 @@ export type Database = {
           lembrete_interna_dias?: number | null
           lembrete_oficial_dias?: number | null
           nome: string
-          role?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -305,7 +303,6 @@ export type Database = {
           lembrete_interna_dias?: number | null
           lembrete_oficial_dias?: number | null
           nome?: string
-          role?: string | null
           updated_at?: string | null
         }
         Relationships: []
