@@ -1,7 +1,19 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.81.1';
+import { z } from 'https://deno.land/x/zod@v3.23.8/mod.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// Input validation schema
+const CalculateRequestSchema = z.object({
+  lembrete_id: z.string().uuid().optional(),
+  force: z.boolean().optional(),
+}).optional();
 
 interface RegraParsed {
   tipo: 'INTERNA' | 'OFICIAL' | 'FOLLOWUP';
@@ -131,10 +143,27 @@ function ajustarParaJanelaSilencio(data: Date, inicio: string, fim: string): Dat
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
+    return new Response(null, { headers: corsHeaders });
   }
   
   try {
+    // Validate request body if present
+    let validatedInput: z.infer<typeof CalculateRequestSchema> = undefined;
+    if (req.method === 'POST') {
+      try {
+        const body = await req.json();
+        validatedInput = CalculateRequestSchema.parse(body);
+      } catch (validationError) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Dados de entrada inválidos', 
+            details: validationError instanceof z.ZodError ? validationError.errors : String(validationError)
+          }),
+          { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+      }
+    }
+    
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     console.log('🔄 Iniciando cálculo de lembretes...');
@@ -232,14 +261,14 @@ Deno.serve(async (req) => {
     
     return new Response(
       JSON.stringify({ success: true, processados, erros }),
-      { headers: { 'Content-Type': 'application/json' } }
+      { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
   } catch (error) {
     console.error('❌ Erro geral:', error);
     const message = error instanceof Error ? error.message : 'Erro desconhecido';
     return new Response(
       JSON.stringify({ error: message }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
   }
 });
