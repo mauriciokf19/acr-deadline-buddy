@@ -9,9 +9,10 @@ interface KPICardProps {
   icon: React.ReactNode;
   variant: "danger" | "warning" | "info" | "success";
   onClick: () => void;
+  "aria-label"?: string;
 }
 
-function KPICard({ title, count, icon, variant, onClick }: KPICardProps) {
+function KPICard({ title, count, icon, variant, onClick, "aria-label": ariaLabel }: KPICardProps) {
   const colors = {
     danger: "text-destructive",
     warning: "text-orange-500",
@@ -23,6 +24,15 @@ function KPICard({ title, count, icon, variant, onClick }: KPICardProps) {
     <Card 
       className="cursor-pointer transition-all hover:shadow-md active:scale-95"
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      aria-label={ariaLabel || title}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
     >
       <CardHeader className="pb-2">
         <CardTitle className={cn("flex items-center gap-2 text-sm font-medium", colors[variant])}>
@@ -60,6 +70,7 @@ export function DashboardKPIs({ atrasadas, vencemHoje, estaSemana, noPrazo }: Da
         icon={<AlertCircle className="h-4 w-4" />}
         variant="danger"
         onClick={() => handleKPIClick("atrasadas")}
+        aria-label="Ver obrigações atrasadas. Obrigações com deadline oficial ultrapassado e estado diferente de Submetido ou Concluído"
       />
       <KPICard
         title="Vencem Hoje"
@@ -67,6 +78,7 @@ export function DashboardKPIs({ atrasadas, vencemHoje, estaSemana, noPrazo }: Da
         icon={<Clock className="h-4 w-4" />}
         variant="warning"
         onClick={() => handleKPIClick("hoje")}
+        aria-label="Ver obrigações que vencem hoje. Qualquer das 3 datas (Revisão, Interna ou Oficial) coincide com hoje"
       />
       <KPICard
         title="Esta Semana"
@@ -74,6 +86,7 @@ export function DashboardKPIs({ atrasadas, vencemHoje, estaSemana, noPrazo }: Da
         icon={<Calendar className="h-4 w-4" />}
         variant="info"
         onClick={() => handleKPIClick("semana")}
+        aria-label="Ver obrigações desta semana. Qualquer das 3 datas dentro da semana ISO atual"
       />
       <KPICard
         title="No Prazo"
@@ -81,6 +94,7 @@ export function DashboardKPIs({ atrasadas, vencemHoje, estaSemana, noPrazo }: Da
         icon={<CheckCircle className="h-4 w-4" />}
         variant="success"
         onClick={() => handleKPIClick("futuro")}
+        aria-label="Ver obrigações no prazo. Obrigações ativas que não estão atrasadas, não vencem hoje e não vencem esta semana"
       />
     </div>
   );

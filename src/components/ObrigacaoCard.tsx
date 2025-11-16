@@ -115,6 +115,7 @@ export function ObrigacaoCard({ obrigacao, onQuickAction, onEdit, onDelete }: Ob
               variant="outline"
               className="flex-1 text-xs"
               onClick={() => onQuickAction?.("enviar_senior")}
+              aria-label="Enviar ao Senior"
             >
               Enviar ao Senior
             </Button>
@@ -128,6 +129,7 @@ export function ObrigacaoCard({ obrigacao, onQuickAction, onEdit, onDelete }: Ob
               variant="outline"
               className="flex-1 text-xs"
               onClick={() => onQuickAction?.("aprovar")}
+              aria-label="Aprovar obrigação"
             >
               Aprovar
             </Button>
@@ -141,6 +143,7 @@ export function ObrigacaoCard({ obrigacao, onQuickAction, onEdit, onDelete }: Ob
               variant="outline"
               className="flex-1 text-xs"
               onClick={() => onQuickAction?.("submeter")}
+              aria-label="Submeter obrigação"
             >
               Submeter
             </Button>
@@ -153,6 +156,7 @@ export function ObrigacaoCard({ obrigacao, onQuickAction, onEdit, onDelete }: Ob
               size="sm"
               className="flex-1 text-xs"
               onClick={() => onQuickAction?.("concluir")}
+              aria-label="Concluir obrigação"
             >
               Concluir
             </Button>
@@ -165,6 +169,7 @@ export function ObrigacaoCard({ obrigacao, onQuickAction, onEdit, onDelete }: Ob
             variant="ghost"
             className="flex-1 text-xs"
             onClick={onEdit}
+            aria-label="Editar obrigação"
           >
             <Edit className="mr-1 h-3 w-3" />
             Editar
@@ -174,6 +179,7 @@ export function ObrigacaoCard({ obrigacao, onQuickAction, onEdit, onDelete }: Ob
             variant="ghost"
             className="flex-1 text-xs text-destructive hover:text-destructive"
             onClick={onDelete}
+            aria-label="Eliminar obrigação"
           >
             <Trash2 className="mr-1 h-3 w-3" />
             Apagar

@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { FolderKanban, MoreVertical, Edit, Archive, Copy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface ProjetoCardProps {
   projeto: any;
@@ -20,10 +21,18 @@ interface ProjetoCardProps {
 export function ProjetoCard({ projeto, onEdit, onArchive, onDuplicate }: ProjetoCardProps) {
   const navigate = useNavigate();
 
+  const handleCardClick = () => {
+    if (!projeto?.id) {
+      toast.error("Projeto inválido");
+      return;
+    }
+    navigate(`/projetos/${projeto.id}`);
+  };
+
   return (
     <Card 
       className="cursor-pointer hover:border-primary transition-colors"
-      onClick={() => navigate(`/projetos/${projeto.id}`)}
+      onClick={handleCardClick}
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">

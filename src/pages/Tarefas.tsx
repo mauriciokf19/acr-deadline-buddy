@@ -12,8 +12,9 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Filter, X, CheckSquare, Calendar } from "lucide-react";
+import { Plus, Search, Filter, X, CheckSquare, Calendar as CalendarIconLucide } from "lucide-react";
 import { TarefaForm } from "@/components/TarefaForm";
+import { RescheduleModal } from "@/components/RescheduleModal";
 import { useTarefasFilters } from "@/hooks/useTarefasFilters";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -27,6 +28,8 @@ export default function Tarefas() {
   const [editingTarefa, setEditingTarefa] = useState<any>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedTarefas, setSelectedTarefas] = useState<string[]>([]);
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+  const [rescheduleLoading, setRescheduleLoading] = useState(false);
   const { filters, updateFilter, clearFilters } = useTarefasFilters();
 
   useEffect(() => {
@@ -110,14 +113,18 @@ export default function Tarefas() {
 
       if (error) throw error;
 
-      for (const id of selectedTarefas) {
-        await createLog({
-          entidade_tipo: "tarefa",
-          entidade_id: id,
-          acao: "mudanca_estado",
-          detalhes: "Tarefa marcada como concluída (ação em massa)",
-        });
-      }
+      // Create single log entry for bulk operation
+      const tarefaNomes = tarefas
+        .filter(t => selectedTarefas.includes(t.id))
+        .map(t => t.titulo)
+        .join(", ");
+
+      await createLog({
+        entidade_tipo: "tarefa",
+        entidade_id: selectedTarefas[0], // Reference first one
+        acao: "mudanca_estado",
+        detalhes: `${selectedTarefas.length} tarefas marcadas como concluídas: ${tarefaNomes}`,
+      });
 
       toast.success(`${selectedTarefas.length} tarefa(s) marcada(s) como concluída(s)`);
       setSelectedTarefas([]);
@@ -125,6 +132,49 @@ export default function Tarefas() {
     } catch (error: any) {
       console.error("Erro ao atualizar tarefas:", error);
       toast.error("Erro ao atualizar tarefas");
+    }
+  };
+
+  const handleBulkReschedule = () => {
+    if (selectedTarefas.length === 0) {
+      toast.error("Selecione pelo menos uma tarefa");
+      return;
+    }
+    setRescheduleModalOpen(true);
+  };
+
+  const handleRescheduleConfirm = async (newDate: Date) => {
+    setRescheduleLoading(true);
+    try {
+      const { error } = await supabase
+        .from("tarefas")
+        .update({ deadline: newDate.toISOString() })
+        .in("id", selectedTarefas);
+
+      if (error) throw error;
+
+      // Create single log entry for bulk operation
+      const tarefaNomes = tarefas
+        .filter(t => selectedTarefas.includes(t.id))
+        .map(t => t.titulo)
+        .join(", ");
+
+      await createLog({
+        entidade_tipo: "tarefa",
+        entidade_id: selectedTarefas[0],
+        acao: "mudanca_estado",
+        detalhes: `${selectedTarefas.length} tarefas replanejadas para ${newDate.toLocaleDateString('pt-PT')}: ${tarefaNomes}`,
+      });
+
+      toast.success(`${selectedTarefas.length} tarefa(s) replanejada(s)`);
+      setSelectedTarefas([]);
+      setRescheduleModalOpen(false);
+      loadTarefas();
+    } catch (error: any) {
+      console.error("Erro ao replanejar tarefas:", error);
+      toast.error("Erro ao replanejar tarefas");
+    } finally {
+      setRescheduleLoading(false);
     }
   };
 
@@ -217,10 +267,20 @@ export default function Tarefas() {
                   size="sm"
                   variant="outline"
                   onClick={() => setSelectedTarefas([])}
+                  aria-label="Cancelar seleção"
                 >
                   Cancelar
                 </Button>
-                <Button size="sm" onClick={handleBulkMarkDone}>
+                <Button
+                  size="sm"
+                  onClick={handleBulkReschedule}
+                  variant="outline"
+                  aria-label="Replanejar tarefas selecionadas"
+                >
+                  <CalendarIconLucide className="mr-2 h-4 w-4" />
+                  Replanejar
+                </Button>
+                <Button size="sm" onClick={handleBulkMarkDone} aria-label="Marcar tarefas como concluídas">
                   <CheckSquare className="mr-2 h-4 w-4" />
                   Marcar como Feitas
                 </Button>
@@ -288,7 +348,7 @@ export default function Tarefas() {
                 {tarefa.deadline && (
                   <CardContent className="pt-0">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
+                      <CalendarIconLucide className="h-4 w-4" />
                       <span>{formatDatePT(tarefa.deadline)}</span>
                     </div>
                   </CardContent>
@@ -304,6 +364,14 @@ export default function Tarefas() {
         onOpenChange={setShowForm}
         tarefa={editingTarefa}
         onSuccess={loadTarefas}
+      />
+
+      <RescheduleModal
+        open={rescheduleModalOpen}
+        onOpenChange={setRescheduleModalOpen}
+        onConfirm={handleRescheduleConfirm}
+        selectedCount={selectedTarefas.length}
+        loading={rescheduleLoading}
       />
     </Layout>
   );
