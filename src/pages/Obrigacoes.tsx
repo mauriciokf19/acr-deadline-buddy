@@ -13,6 +13,7 @@ import { Plus, Search, Filter, X } from "lucide-react";
 import { ObrigacaoCard } from "@/components/ObrigacaoCard";
 import { ObrigacaoForm } from "@/components/ObrigacaoForm";
 import { DeleteObrigacaoDialog } from "@/components/DeleteObrigacaoDialog";
+import { SubmeterModal } from "@/components/SubmeterModal";
 import { useObrigacoesFilters } from "@/hooks/useObrigacoesFilters";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -33,6 +34,9 @@ export default function Obrigacoes() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [profileSettings, setProfileSettings] = useState<any>(null);
   const [selectedObrigacaoId, setSelectedObrigacaoId] = useState<string | null>(null);
+  const [submeterModalOpen, setSubmeterModalOpen] = useState(false);
+  const [obrigacaoToSubmit, setObrigacaoToSubmit] = useState<any>(null);
+  const [submeterLoading, setSubmeterLoading] = useState(false);
   const { filters, updateFilter, clearFilters } = useObrigacoesFilters();
 
   // Processar deep links
@@ -155,11 +159,6 @@ export default function Obrigacoes() {
           logDetails = "Aprovado pelo Senior";
           break;
         case "submeter":
-          if (!obrigacao.submetido_em) {
-            toast.error("Data de submissão é obrigatória");
-            return;
-          }
-          
           // Check if comprovativo is required and missing
           if (profileSettings?.exigir_comprovativo_para_submetido) {
             const hasComprovativo = obrigacao.comprovativo_storage_path || obrigacao.comprovativo_url;
@@ -179,6 +178,14 @@ export default function Obrigacoes() {
               
               return;
             }
+          }
+
+          // Check if data_submissao is missing
+          if (!obrigacao.submetido_em) {
+            // Open modal to ask for date
+            setObrigacaoToSubmit(obrigacao);
+            setSubmeterModalOpen(true);
+            return;
           }
           
           updates = { estado: "submetido" };
@@ -265,6 +272,44 @@ export default function Obrigacoes() {
       loadObrigacoes();
     } else {
       toast.error(`Erro ao restaurar: ${result.error}`);
+    }
+  };
+
+  const handleSubmeterConfirm = async (date: Date) => {
+    if (!obrigacaoToSubmit) return;
+
+    setSubmeterLoading(true);
+    try {
+      const { error } = await supabase
+        .from("obrigacoes")
+        .update({
+          estado: "submetido",
+          submetido_em: date.toISOString(),
+        })
+        .eq("id", obrigacaoToSubmit.id);
+
+      if (error) throw error;
+
+      await createLog({
+        entidade_tipo: "obrigacao",
+        entidade_id: obrigacaoToSubmit.id,
+        acao: "mudanca_estado",
+        detalhes: `Submetido em ${date.toLocaleDateString('pt-PT')}`,
+      });
+
+      toast.success("Obrigação submetida com sucesso");
+      setSubmeterModalOpen(false);
+      setObrigacaoToSubmit(null);
+      loadObrigacoes();
+    } catch (error: any) {
+      console.error("Erro ao submeter obrigação:", error);
+      if (error.message?.includes("constraint")) {
+        toast.error("Erro: Verifique se todos os campos obrigatórios estão preenchidos");
+      } else {
+        toast.error("Erro ao submeter obrigação");
+      }
+    } finally {
+      setSubmeterLoading(false);
     }
   };
 
@@ -410,6 +455,13 @@ export default function Obrigacoes() {
         }}
         onConfirm={confirmDelete}
         loading={deleteLoading}
+      />
+
+      <SubmeterModal
+        open={submeterModalOpen}
+        onOpenChange={setSubmeterModalOpen}
+        onConfirm={handleSubmeterConfirm}
+        loading={submeterLoading}
       />
     </Layout>
   );
