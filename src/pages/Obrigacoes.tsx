@@ -159,38 +159,10 @@ export default function Obrigacoes() {
           logDetails = "Aprovado pelo Senior";
           break;
         case "submeter":
-          // Check if comprovativo is required and missing
-          if (profileSettings?.exigir_comprovativo_para_submetido) {
-            const hasComprovativo = obrigacao.comprovativo_storage_path || obrigacao.comprovativo_url;
-            if (!hasComprovativo) {
-              toast.error("Para marcar como Submetido, tens de anexar o comprovativo e preencher a data de submissão.");
-              
-              // Log the blocked attempt
-              await createLog({
-                entidade_tipo: "obrigacao",
-                entidade_id: obrigacao.id,
-                acao: "submissao_bloqueada",
-                detalhes: JSON.stringify({
-                  motivo: "Comprovativo em falta",
-                  regra: "exigir_comprovativo_para_submetido ativo"
-                })
-              });
-              
-              return;
-            }
-          }
-
-          // Check if data_submissao is missing
-          if (!obrigacao.submetido_em) {
-            // Open modal to ask for date
-            setObrigacaoToSubmit(obrigacao);
-            setSubmeterModalOpen(true);
-            return;
-          }
-          
-          updates = { estado: "submetido" };
-          logDetails = "Submetido";
-          break;
+          // Open modal to collect submission date (and comprovativo if needed)
+          setObrigacaoToSubmit(obrigacao);
+          setSubmeterModalOpen(true);
+          return;
         case "concluir":
           updates = { 
             estado: "concluido",
@@ -462,6 +434,8 @@ export default function Obrigacoes() {
         onOpenChange={setSubmeterModalOpen}
         onConfirm={handleSubmeterConfirm}
         loading={submeterLoading}
+        obrigacaoId={obrigacaoToSubmit?.id || ""}
+        hasComprovativo={!!obrigacaoToSubmit?.comprovativo_storage_path}
       />
     </Layout>
   );

@@ -24,6 +24,8 @@ export default function Calendario() {
     return (localStorage.getItem("calendario-view") as ViewMode) || "mensal";
   });
   const [currentDate, setCurrentDate] = useState<Date>(getTodayInTimezone());
+  const [currentMonthDate, setCurrentMonthDate] = useState<Date>(getTodayInTimezone());
+  const [visibleEventsCount, setVisibleEventsCount] = useState(100);
 
   // Calcular intervalo de datas baseado no filtro
   const dateRange = useMemo(() => {
@@ -42,20 +44,45 @@ export default function Calendario() {
     }
   }, [filters.intervalo]);
 
-  const { events, loading } = useCalendarioEvents({
+  // Calculate date range for current month view
+  const monthDateRange = useMemo(() => {
+    return {
+      inicio: startOfMonth(currentMonthDate),
+      fim: endOfMonth(currentMonthDate)
+    };
+  }, [currentMonthDate]);
+
+  // Use month date range for fetching when in monthly view
+  const effectiveDateRange = viewMode === "mensal" ? monthDateRange : dateRange;
+
+  const { events: allEvents, loading } = useCalendarioEvents({
     projetos: filters.projetos,
     tipos: filters.tipos,
     estados: filters.estados,
-    dataInicio: dateRange.inicio,
-    dataFim: dateRange.fim,
+    dataInicio: effectiveDateRange.inicio,
+    dataFim: effectiveDateRange.fim,
     apenasOficiais: filters.apenasOficiais,
   });
+
+  // Paginated events for list view
+  const events = useMemo(() => {
+    if (viewMode === "lista") {
+      return allEvents.slice(0, visibleEventsCount);
+    }
+    return allEvents;
+  }, [allEvents, viewMode, visibleEventsCount]);
+
+  const hasMoreEvents = viewMode === "lista" && allEvents.length > visibleEventsCount;
+
+  const loadMoreEvents = () => {
+    setVisibleEventsCount(prev => prev + 100);
+  };
 
   // Eventos futuros para export
   const futureEvents = useMemo(() => {
     const today = getTodayInTimezone();
-    return events.filter(e => e.data >= today);
-  }, [events]);
+    return allEvents.filter(e => e.data >= today);
+  }, [allEvents]);
 
   const handleExportICS = () => {
     if (futureEvents.length === 0) {
@@ -70,7 +97,7 @@ export default function Calendario() {
   };
 
   const handleEventClick = (event: CalendarioEvent) => {
-    navigate(`/obrigacoes`); // Pode implementar rota de detalhe depois
+    navigate(`/obrigacoes`);
   };
 
   const changeViewMode = (mode: ViewMode) => {
@@ -79,11 +106,11 @@ export default function Calendario() {
   };
 
   const goToToday = () => {
-    setCurrentDate(getTodayInTimezone());
+    setCurrentMonthDate(getTodayInTimezone());
   };
 
   const navigateMonth = (direction: "prev" | "next") => {
-    setCurrentDate(prev => direction === "prev" ? subMonths(prev, 1) : addMonths(prev, 1));
+    setCurrentMonthDate(prev => direction === "prev" ? subMonths(prev, 1) : addMonths(prev, 1));
   };
 
   return (

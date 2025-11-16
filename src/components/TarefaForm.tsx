@@ -131,12 +131,20 @@ export function TarefaForm({
 
         await createLog({
           entidade_tipo: "tarefa",
-          entidade_id: newTarefa.id,
+          entidade_id: newTarefa?.id || "",
           acao: "criar",
           detalhes: `Tarefa "${data.titulo}" criada`,
         });
 
-        toast.success("Tarefa criada com sucesso");
+        toast.success("Tarefa criada com sucesso", {
+          action: {
+            label: "Abrir",
+            onClick: () => {
+              // Navigate to task detail (could be implemented later)
+              window.location.href = `/tarefas`;
+            },
+          },
+        });
       }
 
       onSuccess();
