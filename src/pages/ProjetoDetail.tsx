@@ -9,6 +9,7 @@ import { ArrowLeft, Edit, Archive, Copy, FolderKanban } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { ProjetoForm } from "@/components/ProjetoForm";
+import { TarefasProjetoTab } from "@/components/TarefasProjetoTab";
 import { createLog } from "@/lib/logUtils";
 
 export default function ProjetoDetail() {
@@ -244,6 +245,7 @@ export default function ProjetoDetail() {
             <TabsTrigger value="obrigacoes">
               Obrigações ({obrigacoes.length})
             </TabsTrigger>
+            <TabsTrigger value="tarefas">Tarefas</TabsTrigger>
           </TabsList>
 
           <TabsContent value="info" className="space-y-4">
@@ -316,6 +318,10 @@ export default function ProjetoDetail() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="tarefas" className="space-y-4">
+            <TarefasProjetoTab projetoId={id!} />
           </TabsContent>
         </Tabs>
 
