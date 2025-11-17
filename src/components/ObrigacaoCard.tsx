@@ -58,7 +58,7 @@ export function ObrigacaoCard({ obrigacao, onQuickAction, onEdit, onDelete }: Ob
     : obrigacao.deadline_oficial;
 
   return (
-    <Card className="overflow-hidden transition-shadow hover:shadow-md">
+    <Card className="overflow-hidden transition-shadow hover:shadow-md" data-testid="obrigacao-card">
       <div className="h-1" style={{ backgroundColor: obrigacao.projeto?.cor || "#3B82F6" }} />
       
       <CardHeader className="pb-3">

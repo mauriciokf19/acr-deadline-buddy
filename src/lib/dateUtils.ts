@@ -1,4 +1,4 @@
-import { format, parseISO } from "date-fns";
+import { format, parseISO, startOfWeek, endOfWeek } from "date-fns";
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
 import { pt } from "date-fns/locale";
 
@@ -102,6 +102,36 @@ export function isNextWeek(date: Date | string | null | undefined): boolean {
     nextWeek.setDate(today.getDate() + 7);
     
     return zonedDate >= today && zonedDate <= nextWeek;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Obter início do dia de hoje em Europe/Lisbon (normalizado para 00:00:00)
+ */
+export function getTodayPT(): Date {
+  const today = getTodayInTimezone();
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+
+/**
+ * Verificar se uma data está na semana ISO atual (Europe/Lisbon)
+ */
+export function isThisWeekPT(date: Date | string | null | undefined): boolean {
+  if (!date) return false;
+  
+  try {
+    const dateObj = typeof date === "string" ? parseISO(date) : date;
+    const zonedDate = toZonedTime(dateObj, TIMEZONE);
+    const today = getTodayInTimezone();
+    
+    // Semana ISO: segunda a domingo
+    const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
+    
+    return zonedDate >= weekStart && zonedDate <= weekEnd;
   } catch {
     return false;
   }
