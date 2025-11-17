@@ -8,6 +8,8 @@ import { ProjetoProgress } from "@/components/ProjetoProgress";
 import { DashboardFAB } from "@/components/DashboardFAB";
 import { useDashboardFilters } from "@/hooks/useDashboardFilters";
 import { startOfWeek, endOfWeek, addDays } from "date-fns";
+import { getTodayPT } from "@/lib/dateUtils";
+import { toZonedTime } from "date-fns-tz";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -70,10 +72,11 @@ export default function Dashboard() {
     const { data, error } = await query;
     if (error) throw error;
 
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    const inicioSemana = startOfWeek(hoje, { weekStartsOn: 1 });
-    const fimSemana = endOfWeek(hoje, { weekStartsOn: 1 });
+    // Use Europe/Lisbon timezone
+    const TIMEZONE = "Europe/Lisbon";
+    const todayPT = getTodayPT();
+    const inicioSemana = startOfWeek(todayPT, { weekStartsOn: 1 });
+    const fimSemana = endOfWeek(todayPT, { weekStartsOn: 1 });
 
     let atrasadas = 0;
     let vencemHoje = 0;
@@ -81,31 +84,33 @@ export default function Dashboard() {
     let noPrazo = 0;
 
     (data || []).forEach((obr: any) => {
-      const oficial = new Date(obr.deadline_oficial);
-      const interna = new Date(obr.deadline_interna);
-      const revisao = new Date(obr.deadline_revisao_senior);
-      
+      // Convert all dates to Europe/Lisbon timezone and normalize to start of day
+      const oficial = toZonedTime(new Date(obr.deadline_oficial), TIMEZONE);
       oficial.setHours(0, 0, 0, 0);
+      
+      const interna = toZonedTime(new Date(obr.deadline_interna), TIMEZONE);
       interna.setHours(0, 0, 0, 0);
+      
+      const revisao = toZonedTime(new Date(obr.deadline_revisao_senior), TIMEZONE);
       revisao.setHours(0, 0, 0, 0);
 
-      // Atrasadas: deadline_oficial < hoje
-      if (oficial < hoje) {
+      // Atrasadas: estado NOT IN ('Submetido','Concluido') AND todayPT > deadline_oficial
+      if (oficial < todayPT) {
         atrasadas++;
         return;
       }
 
       // Vencem Hoje: qualquer das 3 datas = hoje
       if (
-        oficial.getTime() === hoje.getTime() ||
-        interna.getTime() === hoje.getTime() ||
-        revisao.getTime() === hoje.getTime()
+        oficial.getTime() === todayPT.getTime() ||
+        interna.getTime() === todayPT.getTime() ||
+        revisao.getTime() === todayPT.getTime()
       ) {
         vencemHoje++;
         return;
       }
 
-      // Esta Semana: qualquer das 3 datas dentro da semana
+      // Esta Semana: qualquer das 3 datas dentro da semana ISO
       if (
         (oficial >= inicioSemana && oficial <= fimSemana) ||
         (interna >= inicioSemana && interna <= fimSemana) ||
@@ -115,7 +120,7 @@ export default function Dashboard() {
         return;
       }
 
-      // No Prazo: resto
+      // No Prazo: ativas e não classificadas acima
       noPrazo++;
     });
 
@@ -123,9 +128,8 @@ export default function Dashboard() {
   };
 
   const loadEventos = async () => {
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    const seteDias = addDays(hoje, 7);
+    const todayPT = getTodayPT();
+    const seteDias = addDays(todayPT, 7);
 
     let query = supabase
       .from("obrigacoes")
@@ -153,6 +157,8 @@ export default function Dashboard() {
     const { data, error } = await query;
     if (error) throw error;
 
+    const TIMEZONE = "Europe/Lisbon";
+
     // Expandir para eventos individuais
     const eventosArray: any[] = [];
     (data || []).forEach((obr: any) => {
@@ -164,10 +170,10 @@ export default function Dashboard() {
 
       datas.forEach(({ tipo, data: dataStr }) => {
         if (!dataStr) return;
-        const dataEvento = new Date(dataStr);
+        const dataEvento = toZonedTime(new Date(dataStr), TIMEZONE);
         dataEvento.setHours(0, 0, 0, 0);
 
-        if (dataEvento >= hoje && dataEvento <= seteDias) {
+        if (dataEvento >= todayPT && dataEvento <= seteDias) {
           eventosArray.push({
             id: obr.id,
             titulo: obr.titulo,
@@ -189,9 +195,10 @@ export default function Dashboard() {
   };
 
   const loadProjetoProgress = async () => {
-    const hoje = new Date();
-    const inicioSemana = startOfWeek(hoje, { weekStartsOn: 1 });
-    const fimSemana = endOfWeek(hoje, { weekStartsOn: 1 });
+    const todayPT = getTodayPT();
+    const inicioSemana = startOfWeek(todayPT, { weekStartsOn: 1 });
+    const fimSemana = endOfWeek(todayPT, { weekStartsOn: 1 });
+    const TIMEZONE = "Europe/Lisbon";
 
     // Obter todos os projetos ativos
     const { data: projetosData, error: projetosError } = await supabase
@@ -237,7 +244,7 @@ export default function Dashboard() {
 
           datas.forEach((dataStr) => {
             if (!dataStr) return;
-            const data = new Date(dataStr);
+            const data = toZonedTime(new Date(dataStr), TIMEZONE);
             data.setHours(0, 0, 0, 0);
             if (data >= inicioSemana && data <= fimSemana) {
               eventosSemana++;

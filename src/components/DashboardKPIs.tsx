@@ -27,6 +27,7 @@ function KPICard({ title, count, icon, variant, onClick, "aria-label": ariaLabel
       role="button"
       tabIndex={0}
       aria-label={ariaLabel || title}
+      data-testid="kpi-card"
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
