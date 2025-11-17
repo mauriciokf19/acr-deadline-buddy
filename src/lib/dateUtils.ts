@@ -136,3 +136,94 @@ export function isThisWeekPT(date: Date | string | null | undefined): boolean {
     return false;
   }
 }
+
+/**
+ * Aplicar janela de silêncio aos lembretes
+ * Se o horário cair entre inicio e fim, reagendar para o fim do período
+ */
+export function applySilenceWindow(
+  date: Date,
+  silenceStart: string | null | undefined, // "HH:mm" format
+  silenceEnd: string | null | undefined
+): Date {
+  if (!silenceStart || !silenceEnd) return date;
+
+  try {
+    const [startHour, startMin] = silenceStart.split(':').map(Number);
+    const [endHour, endMin] = silenceEnd.split(':').map(Number);
+    
+    const dateHour = date.getHours();
+    const dateMin = date.getMinutes();
+    const dateTime = dateHour * 60 + dateMin;
+    const startTime = startHour * 60 + startMin;
+    const endTime = endHour * 60 + endMin;
+
+    // Check if date falls within silence window
+    // Handle overnight windows (e.g., 20:00-08:00)
+    const inSilence = startTime > endTime 
+      ? (dateTime >= startTime || dateTime < endTime)
+      : (dateTime >= startTime && dateTime < endTime);
+
+    if (inSilence) {
+      // Reschedule to end of silence window
+      const rescheduled = new Date(date);
+      rescheduled.setHours(endHour, endMin, 0, 0);
+      
+      // If we're past midnight and the window ends tomorrow
+      if (startTime > endTime && dateTime >= startTime) {
+        rescheduled.setDate(rescheduled.getDate() + 1);
+      }
+      
+      return rescheduled;
+    }
+
+    return date;
+  } catch {
+    return date;
+  }
+}
+
+/**
+ * Calcular próximo disparo para lembretes "antes de deadline"
+ * Hora-alvo: 08:00 local time
+ */
+export function calculateReminderBeforeDeadline(
+  deadline: Date | string,
+  daysBefore: number,
+  silenceStart?: string | null,
+  silenceEnd?: string | null
+): Date {
+  const deadlineDate = typeof deadline === "string" ? parseISO(deadline) : deadline;
+  const zonedDeadline = toZonedTime(deadlineDate, TIMEZONE);
+  
+  // Subtract days
+  const reminderDate = new Date(zonedDeadline);
+  reminderDate.setDate(reminderDate.getDate() - daysBefore);
+  
+  // Set to 08:00 local time
+  reminderDate.setHours(8, 0, 0, 0);
+  
+  // Apply silence window
+  return applySilenceWindow(reminderDate, silenceStart, silenceEnd);
+}
+
+/**
+ * Calcular próximo disparo para lembretes "após envio"
+ * Mantém hora original do envio
+ */
+export function calculateReminderAfterSend(
+  sendDate: Date | string,
+  hoursAfter: number,
+  silenceStart?: string | null,
+  silenceEnd?: string | null
+): Date {
+  const sendDateTime = typeof sendDate === "string" ? parseISO(sendDate) : sendDate;
+  const zonedSend = toZonedTime(sendDateTime, TIMEZONE);
+  
+  // Add hours
+  const reminderDate = new Date(zonedSend);
+  reminderDate.setHours(reminderDate.getHours() + hoursAfter);
+  
+  // Apply silence window
+  return applySilenceWindow(reminderDate, silenceStart, silenceEnd);
+}

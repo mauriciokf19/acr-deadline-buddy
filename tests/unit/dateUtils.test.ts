@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { formatDatePT, formatDateTimePT, isOverdue, isToday, isNextWeek } from '@/lib/dateUtils';
+import { 
+  formatDatePT, 
+  formatDateTimePT, 
+  isOverdue, 
+  isToday, 
+  isNextWeek,
+  applySilenceWindow,
+  calculateReminderBeforeDeadline,
+  calculateReminderAfterSend
+} from '@/lib/dateUtils';
 
 describe('Date Utils', () => {
   describe('formatDatePT', () => {
@@ -83,4 +92,67 @@ describe('Date Utils', () => {
       expect(isNextWeek(null)).toBe(false);
     });
   });
+
+  describe('applySilenceWindow', () => {
+    it('should reschedule if within silence window', () => {
+      const date = new Date('2024-12-15T22:00:00'); // 22:00
+      const result = applySilenceWindow(date, '20:00', '08:00');
+      
+      // Should be rescheduled to 08:00 next day
+      expect(result.getHours()).toBe(8);
+      expect(result.getMinutes()).toBe(0);
+    });
+
+    it('should not reschedule if outside silence window', () => {
+      const date = new Date('2024-12-15T10:00:00'); // 10:00
+      const result = applySilenceWindow(date, '20:00', '08:00');
+      
+      expect(result.getTime()).toBe(date.getTime());
+    });
+
+    it('should return original date if no silence window', () => {
+      const date = new Date('2024-12-15T22:00:00');
+      const result = applySilenceWindow(date, null, null);
+      
+      expect(result.getTime()).toBe(date.getTime());
+    });
+  });
+
+  describe('calculateReminderBeforeDeadline', () => {
+    it('should calculate reminder 3 days before at 08:00', () => {
+      const deadline = new Date('2024-12-20T15:00:00');
+      const result = calculateReminderBeforeDeadline(deadline, 3);
+      
+      expect(result.getDate()).toBe(17); // 3 days before 20th
+      expect(result.getHours()).toBe(8);
+      expect(result.getMinutes()).toBe(0);
+    });
+
+    it('should apply silence window', () => {
+      const deadline = new Date('2024-12-20T15:00:00');
+      // This would normally be 08:00 on the 17th, but with silence window it stays at 08:00
+      const result = calculateReminderBeforeDeadline(deadline, 3, '20:00', '08:00');
+      
+      expect(result.getHours()).toBe(8);
+    });
+  });
+
+  describe('calculateReminderAfterSend', () => {
+    it('should add hours to send date', () => {
+      const sendDate = new Date('2024-12-15T10:00:00');
+      const result = calculateReminderAfterSend(sendDate, 48);
+      
+      expect(result.getDate()).toBe(17); // 2 days later
+      expect(result.getHours()).toBe(10); // Same hour
+    });
+
+    it('should apply silence window', () => {
+      const sendDate = new Date('2024-12-15T20:00:00');
+      const result = calculateReminderAfterSend(sendDate, 2, '20:00', '08:00');
+      
+      // 20:00 + 2h = 22:00, which is in silence window, should reschedule to 08:00 next day
+      expect(result.getHours()).toBe(8);
+    });
+  });
 });
+
