@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { validateFileUpload, formatFileSize } from "@/lib/uploadValidation";
 
 interface ComprovantivoUploadProps {
   obrigacaoId: string;
@@ -31,19 +32,14 @@ export function ComprovantivoUpload({
   const [uploading, setUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
 
-    // Validate file type
-    if (!ALLOWED_TYPES.includes(selectedFile.type)) {
-      toast.error("Tipo de arquivo não suportado. Use PDF, JPEG, PNG ou WEBP.");
-      return;
-    }
-
-    // Validate file size
-    if (selectedFile.size > MAX_FILE_SIZE) {
-      toast.error("Arquivo muito grande. Tamanho máximo: 10MB.");
+    // Server-side validation with magic bytes
+    const validation = await validateFileUpload(selectedFile);
+    if (!validation.valid) {
+      toast.error(validation.error);
       return;
     }
 

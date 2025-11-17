@@ -97,7 +97,7 @@ export default function Calendario() {
   };
 
   const handleEventClick = (event: CalendarioEvent) => {
-    navigate(`/obrigacoes`);
+    navigate(`/obrigacoes/${event.obrigacaoId}`);
   };
 
   const changeViewMode = (mode: ViewMode) => {
