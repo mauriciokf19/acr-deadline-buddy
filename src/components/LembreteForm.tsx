@@ -79,12 +79,14 @@ export function LembreteForm({
       const { data } = await supabase
         .from("obrigacoes")
         .select("id, titulo")
+        .is("deleted_at", null)
         .order("titulo");
       setObrigacoes(data || []);
     } else {
       const { data } = await supabase
         .from("tarefas")
         .select("id, titulo")
+        .is("deleted_at", null)
         .order("titulo");
       setTarefas(data || []);
     }
@@ -128,7 +130,12 @@ export function LembreteForm({
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Erro ao criar lembrete:", error);
+          toast.error(error.message || "Erro ao criar lembrete. Verifique se a entidade selecionada existe.");
+          setLoading(false);
+          return;
+        }
 
         await createLog({
           entidade_tipo: "lembrete",

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Bell, Check, Filter, Mail } from "lucide-react";
+import { Bell, Check, Filter, Mail, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -86,6 +86,56 @@ export default function Alertas() {
     }
   }
 
+  async function eliminarAlerta(id: string) {
+    try {
+      const { error } = await supabase
+        .from("alertas")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      setAlertas((prev) => prev.filter((a) => a.id !== id));
+
+      toast({
+        title: "Alerta eliminado",
+      });
+    } catch (error) {
+      console.error("Erro ao eliminar alerta:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível eliminar o alerta.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  async function limparTodos() {
+    if (!confirm("Eliminar todos os alertas?")) return;
+
+    try {
+      const { error } = await supabase
+        .from("alertas")
+        .delete()
+        .not("id", "is", null);
+
+      if (error) throw error;
+
+      setAlertas([]);
+
+      toast({
+        title: "Todos os alertas eliminados",
+      });
+    } catch (error) {
+      console.error("Erro ao eliminar alertas:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível eliminar os alertas.",
+        variant: "destructive",
+      });
+    }
+  }
+
   function handleAlertaClick(alerta: Alerta) {
     if (!alerta.visto) {
       marcarComoVisto(alerta.id, true);
@@ -116,7 +166,17 @@ export default function Alertas() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {alertas.length > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={limparTodos}
+                className="btn-compact"
+              >
+                Limpar todos
+              </Button>
+            )}
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={filtroVisto} onValueChange={setFiltroVisto}>
               <SelectTrigger className="w-40">
@@ -179,20 +239,35 @@ export default function Alertas() {
                         <span>{formatDateTimePT(alerta.disparado_em)}</span>
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        marcarComoVisto(alerta.id, !alerta.visto);
-                      }}
-                    >
-                      <Check
-                        className={`h-4 w-4 ${
-                          alerta.visto ? "text-primary" : "text-muted-foreground"
-                        }`}
-                      />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          marcarComoVisto(alerta.id, !alerta.visto);
+                        }}
+                        aria-label={alerta.visto ? "Marcar como não visto" : "Marcar como visto"}
+                      >
+                        <Check
+                          className={`h-4 w-4 ${
+                            alerta.visto ? "text-primary" : "text-muted-foreground"
+                          }`}
+                        />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          eliminarAlerta(alerta.id);
+                        }}
+                        aria-label="Eliminar alerta"
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">

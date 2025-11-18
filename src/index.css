@@ -109,3 +109,35 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Mobile compact button styles */
+@layer components {
+  .btn-compact {
+    @apply h-10 px-3 text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-full;
+  }
+
+  @media (max-width: 640px) {
+    .btn-compact {
+      @apply h-9 px-2 text-xs;
+    }
+  }
+}
+
+/* Safe area padding for mobile */
+@layer utilities {
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+}

@@ -146,12 +146,13 @@ export default function Calendario() {
         />
 
         {/* Navegação de vista */}
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Button
               variant={viewMode === "mensal" ? "default" : "outline"}
               size="sm"
               onClick={() => changeViewMode("mensal")}
+              aria-label="Vista mensal"
             >
               <CalendarIcon className="h-4 w-4 mr-2" />
               Mensal
@@ -160,6 +161,7 @@ export default function Calendario() {
               variant={viewMode === "semanal" ? "default" : "outline"}
               size="sm"
               onClick={() => changeViewMode("semanal")}
+              aria-label="Vista semanal"
             >
               Semanal
             </Button>
@@ -167,6 +169,7 @@ export default function Calendario() {
               variant={viewMode === "lista" ? "default" : "outline"}
               size="sm"
               onClick={() => changeViewMode("lista")}
+              aria-label="Vista lista"
             >
               <List className="h-4 w-4 mr-2" />
               Lista
@@ -174,13 +177,31 @@ export default function Calendario() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigateMonth("prev")}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigateMonth("prev")}
+              disabled={loading}
+              aria-label="Mês anterior"
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="sm" onClick={goToToday}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={goToToday}
+              disabled={loading}
+              aria-label="Hoje"
+            >
               Hoje
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigateMonth("next")}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigateMonth("next")}
+              disabled={loading}
+              aria-label="Mês seguinte"
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -212,13 +233,27 @@ export default function Calendario() {
         ) : (
           <>
             {viewMode === "mensal" && (
-              <VistaMenusal events={events} currentDate={currentDate} onEventClick={handleEventClick} />
+              <VistaMenusal 
+                events={events} 
+                currentDate={currentMonthDate}
+                onEventClick={handleEventClick}
+                onPrevMonth={() => navigateMonth("prev")}
+                onNextMonth={() => navigateMonth("next")}
+                loading={loading}
+              />
             )}
             {viewMode === "semanal" && (
               <VistaSemanal events={events} currentDate={currentDate} onEventClick={handleEventClick} />
             )}
             {viewMode === "lista" && (
               <VistaLista events={events} onEventClick={handleEventClick} />
+            )}
+            {hasMoreEvents && viewMode === "lista" && (
+              <div className="flex justify-center mt-4">
+                <Button onClick={loadMoreEvents} variant="outline">
+                  Carregar mais
+                </Button>
+              </div>
             )}
           </>
         )}
@@ -228,10 +263,13 @@ export default function Calendario() {
 }
 
 // Vista Mensal
-function VistaMenusal({ events, currentDate, onEventClick }: {
+function VistaMenusal({ events, currentDate, onEventClick, onPrevMonth, onNextMonth, loading }: {
   events: CalendarioEvent[];
   currentDate: Date;
   onEventClick: (e: CalendarioEvent) => void;
+  onPrevMonth: () => void;
+  onNextMonth: () => void;
+  loading: boolean;
 }) {
   const eventsByDate = useMemo(() => {
     const map = new Map<string, CalendarioEvent[]>();
@@ -245,8 +283,30 @@ function VistaMenusal({ events, currentDate, onEventClick }: {
 
   return (
     <Card className="p-4">
-      <div className="mb-4 text-center font-semibold text-lg">
-        {format(currentDate, "MMMM yyyy", { locale: pt })}
+      <div className="mb-4 flex items-center justify-center gap-2">
+        <Button 
+          variant="ghost" 
+          size="icon"
+          onClick={onPrevMonth}
+          disabled={loading}
+          aria-label="Mês anterior"
+          className="h-8 w-8"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <div className="text-center font-semibold text-lg min-w-[200px]">
+          {format(currentDate, "MMMM yyyy", { locale: pt })}
+        </div>
+        <Button 
+          variant="ghost" 
+          size="icon"
+          onClick={onNextMonth}
+          disabled={loading}
+          aria-label="Mês seguinte"
+          className="h-8 w-8"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
       </div>
       <Calendar
         mode="single"
@@ -371,18 +431,19 @@ function VistaLista({ events, onEventClick }: {
   return (
     <div className="space-y-2">
       {events.map(event => (
-        <EventCard key={event.id} event={event} onClick={() => onEventClick(event)} />
+        <EventCard key={event.id} event={event} onClick={() => onEventClick(event)} data-testid="event-card" />
       ))}
     </div>
   );
 }
 
 // Card de evento
-function EventCard({ event, onClick }: { event: CalendarioEvent; onClick: () => void }) {
+function EventCard({ event, onClick, ...props }: { event: CalendarioEvent; onClick: () => void; [key: string]: any }) {
   return (
     <Card
       className="p-4 cursor-pointer hover:bg-accent transition-colors"
       onClick={onClick}
+      {...props}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 space-y-1">
