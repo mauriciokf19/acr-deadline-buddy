@@ -366,26 +366,28 @@ export default function Definicoes() {
               <Button
                 onClick={saveReminderDefaults}
                 disabled={savingDefaults}
-                className="flex-1"
+                className="flex-1 min-w-0"
               >
-                {savingDefaults ? "A guardar..." : "Guardar Defaults"}
+                <span className="truncate">{savingDefaults ? "A guardar..." : "Guardar Defaults"}</span>
               </Button>
               <Button
                 onClick={sendTestReminder}
                 variant="outline"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 btn-compact"
               >
-                <Mail className="h-4 w-4" />
-                Enviar Teste
+                <Mail className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline">Enviar Teste</span>
+                <span className="sm:hidden">Teste</span>
               </Button>
               <Button
                 onClick={handleBackfillReminders}
                 variant="secondary"
                 disabled={loading}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 btn-compact"
               >
-                <RefreshCw className="h-4 w-4" />
-                Criar para Existentes
+                <RefreshCw className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline">Criar para Existentes</span>
+                <span className="sm:hidden">Criar</span>
               </Button>
             </div>
           </CardContent>
@@ -429,7 +431,7 @@ export default function Definicoes() {
               disabled={savingDefaults}
               className="w-full"
             >
-              {savingDefaults ? "A guardar..." : "Guardar Configurações"}
+              <span className="truncate">{savingDefaults ? "A guardar..." : "Guardar Configurações"}</span>
             </Button>
           </CardContent>
         </Card>
@@ -473,7 +475,7 @@ export default function Definicoes() {
                         variant="outline"
                         onClick={() => handleRestore(obrigacao)}
                         disabled={restoringId === obrigacao.id}
-                        className="btn-compact"
+                        className="btn-compact w-full sm:w-auto"
                       >
                         {restoringId === obrigacao.id ? "A recuperar..." : "Recuperar"}
                       </Button>
@@ -484,10 +486,10 @@ export default function Definicoes() {
                           setSelectedObrigacao(obrigacao);
                           setHardDeleteDialogOpen(true);
                         }}
-                        className="btn-compact"
+                        className="btn-compact w-full sm:w-auto text-xs"
                       >
-                        <Trash2 className="mr-1 h-3 w-3" />
-                        Apagar Definitivamente
+                        <Trash2 className="mr-1 h-3 w-3 shrink-0" />
+                        <span className="truncate">Apagar Definitivamente</span>
                       </Button>
                     </div>
                   </div>
