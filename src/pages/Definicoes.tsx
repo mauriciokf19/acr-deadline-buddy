@@ -467,12 +467,13 @@ export default function Definicoes() {
                         {new Date(obrigacao.deleted_at).toLocaleDateString("pt-PT")}
                       </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleRestore(obrigacao)}
                         disabled={restoringId === obrigacao.id}
+                        className="btn-compact"
                       >
                         {restoringId === obrigacao.id ? "A recuperar..." : "Recuperar"}
                       </Button>
@@ -483,6 +484,7 @@ export default function Definicoes() {
                           setSelectedObrigacao(obrigacao);
                           setHardDeleteDialogOpen(true);
                         }}
+                        className="btn-compact"
                       >
                         <Trash2 className="mr-1 h-3 w-3" />
                         Apagar Definitivamente
