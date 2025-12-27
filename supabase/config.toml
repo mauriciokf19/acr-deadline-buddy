@@ -1,1 +1,13 @@
 project_id = "llxyacgxypfmvwkrtdte"
+
+[functions.google-oauth]
+verify_jwt = true
+
+[functions.backfill-reminders]
+verify_jwt = true
+
+[functions.calculate-reminders]
+verify_jwt = true
+
+[functions.dispatch-reminders]
+verify_jwt = true
