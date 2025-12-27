@@ -1,5 +1,6 @@
 import { Layout } from "@/components/Layout";
 import { useClients, useCreateClient } from "@/hooks/useClients";
+import { DemoModeBanner } from "@/components/DemoModeBanner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,6 +69,7 @@ export default function Clientes() {
   return (
     <Layout>
       <div className="container mx-auto p-4 space-y-4">
+        <DemoModeBanner />
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
