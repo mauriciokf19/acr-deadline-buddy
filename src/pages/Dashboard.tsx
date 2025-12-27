@@ -5,7 +5,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { DashboardKPIs } from "@/components/DashboardKPIs";
 import { TaskKPIs } from "@/components/TaskKPIs";
 import { DashboardEventsList } from "@/components/DashboardEventsList";
-import { ProjetoProgress } from "@/components/ProjetoProgress";
 import { MyWeekList } from "@/components/MyWeekList";
 import { DashboardFAB } from "@/components/DashboardFAB";
 import { DemoModeBanner } from "@/components/DemoModeBanner";
@@ -40,9 +39,6 @@ export default function Dashboard() {
   
   // Eventos próximos 7 dias
   const [eventos, setEventos] = useState<any[]>([]);
-  
-  // Progresso por projeto
-  const [projetos, setProjeitos] = useState<any[]>([]);
 
   // Tarefas - My Week
   const todayPT = getTodayPT();
@@ -103,7 +99,6 @@ export default function Dashboard() {
       await Promise.all([
         loadKPIs(),
         loadEventos(),
-        loadProjetoProgress(),
       ]);
     } catch (error) {
       console.error("Erro ao carregar dashboard:", error);
@@ -115,13 +110,13 @@ export default function Dashboard() {
   const loadKPIs = async () => {
     let query = supabase
       .from("obrigacoes")
-      .select("id, estado, deadline_oficial, deadline_interna, deadline_revisao_senior")
+      .select("id, estado, deadline_oficial, deadline_interna, deadline_revisao_senior, client_id")
       .is("deleted_at", null)
       .not("estado", "in", '("concluido","submetido")');
 
-    // Aplicar filtros
-    if (filters.projetos.length > 0) {
-      query = query.in("projeto_id", filters.projetos);
+    // Aplicar filtros por cliente
+    if (filters.clientes && filters.clientes.length > 0) {
+      query = query.in("client_id", filters.clientes);
     }
     if (filters.tipos.length > 0) {
       query = query.in("tipo", filters.tipos as any);
@@ -203,13 +198,14 @@ export default function Dashboard() {
         deadline_oficial,
         deadline_interna,
         deadline_revisao_senior,
-        projeto:projetos(nome, cor)
+        client_id,
+        client:clients(name)
       `)
       .is("deleted_at", null);
 
-    // Aplicar filtros
-    if (filters.projetos.length > 0) {
-      query = query.in("projeto_id", filters.projetos);
+    // Aplicar filtros por cliente
+    if (filters.clientes && filters.clientes.length > 0) {
+      query = query.in("client_id", filters.clientes);
     }
     if (filters.tipos.length > 0) {
       query = query.in("tipo", filters.tipos as any);
@@ -243,8 +239,7 @@ export default function Dashboard() {
             estado: obr.estado,
             periodicidade: obr.periodicidade,
             periodo_referencia: obr.periodo_referencia || "-",
-            projeto_nome: obr.projeto?.nome || "Sem projeto",
-            projeto_cor: obr.projeto?.cor || "#3B82F6",
+            cliente_nome: obr.client?.name || "Sem cliente",
           });
         }
       });
@@ -253,84 +248,6 @@ export default function Dashboard() {
     // Ordenar por data
     eventosArray.sort((a, b) => a.data_evento.localeCompare(b.data_evento));
     setEventos(eventosArray);
-  };
-
-  const loadProjetoProgress = async () => {
-    const todayPT = getTodayPT();
-    const inicioSemana = startOfWeek(todayPT, { weekStartsOn: 1 });
-    const fimSemana = endOfWeek(todayPT, { weekStartsOn: 1 });
-    const TIMEZONE = "Europe/Lisbon";
-
-    // Obter todos os projetos ativos
-    const { data: projetosData, error: projetosError } = await supabase
-      .from("projetos")
-      .select("id, nome, cor, ativo")
-      .eq("ativo", true)
-      .order("nome");
-
-    if (projetosError) throw projetosError;
-
-    // Para cada projeto, calcular estatísticas
-    const projetosComStats = await Promise.all(
-      (projetosData || []).map(async (projeto: any) => {
-        // Total de obrigações ativas
-        const { count: total } = await supabase
-          .from("obrigacoes")
-          .select("*", { count: "exact", head: true })
-          .eq("projeto_id", projeto.id)
-          .is("deleted_at", null);
-
-        // Obrigações concluídas/submetidas
-        const { count: concluidas } = await supabase
-          .from("obrigacoes")
-          .select("*", { count: "exact", head: true })
-          .eq("projeto_id", projeto.id)
-          .is("deleted_at", null)
-          .in("estado", ["concluido", "submetido"]);
-
-        // Eventos esta semana
-        const { data: obrigacoesSemana } = await supabase
-          .from("obrigacoes")
-          .select("deadline_oficial, deadline_interna, deadline_revisao_senior")
-          .eq("projeto_id", projeto.id)
-          .is("deleted_at", null);
-
-        let eventosSemana = 0;
-        (obrigacoesSemana || []).forEach((obr: any) => {
-          const datas = [
-            obr.deadline_revisao_senior,
-            obr.deadline_interna,
-            obr.deadline_oficial,
-          ];
-
-          datas.forEach((dataStr) => {
-            if (!dataStr) return;
-            const data = toZonedTime(new Date(dataStr), TIMEZONE);
-            data.setHours(0, 0, 0, 0);
-            if (data >= inicioSemana && data <= fimSemana) {
-              eventosSemana++;
-            }
-          });
-        });
-
-        return {
-          id: projeto.id,
-          nome: projeto.nome,
-          cor: projeto.cor,
-          total: total || 0,
-          concluidas: concluidas || 0,
-          eventosSemana,
-        };
-      })
-    );
-
-    // Top 5 por eventos na semana
-    const top5 = projetosComStats
-      .filter((p) => p.eventosSemana > 0)
-      .sort((a, b) => b.eventosSemana - a.eventosSemana)
-      .slice(0, 5);
-
-    setProjeitos(top5);
   };
 
   // Handlers para My Week
@@ -440,15 +357,6 @@ export default function Dashboard() {
         <div className="space-y-3">
           <h2 className="text-lg font-semibold">Próximos 7 dias</h2>
           <DashboardEventsList eventos={eventos} />
-        </div>
-
-        {/* Progresso por Projeto */}
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold">Progresso por Projeto</h2>
-          <p className="text-xs text-muted-foreground">
-            Top 5 projetos com entregas esta semana
-          </p>
-          <ProjetoProgress projetos={projetos} />
         </div>
       </div>
 

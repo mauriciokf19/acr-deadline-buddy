@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, FolderKanban, ClipboardCheck, Calendar, Settings, Bell, CheckSquare, Repeat, FileText, Bug, Menu, Mail, Building2, Plug } from "lucide-react";
+import { Home, ClipboardCheck, Calendar, Settings, Bell, CheckSquare, FileText, Bug, Menu, Mail, Building2, Plug } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -9,7 +9,7 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Inbox", href: "/inbox", icon: Mail },
   { name: "Clientes", href: "/clientes", icon: Building2 },
-  { name: "Projetos", href: "/projetos", icon: FolderKanban },
+  { name: "Tarefas", href: "/tarefas", icon: CheckSquare },
   { name: "Definições", href: "/definicoes", icon: Settings },
 ];
 
@@ -17,8 +17,6 @@ const secondaryNavigation = [
   { name: "Obrigações", href: "/obrigacoes", icon: ClipboardCheck },
   { name: "Calendário", href: "/calendario", icon: Calendar },
   { name: "Alertas", href: "/alertas", icon: Bell },
-  { name: "Tarefas", href: "/tarefas", icon: CheckSquare },
-  { name: "Lembretes", href: "/lembretes", icon: Repeat },
   { name: "Templates", href: "/templates", icon: FileText },
   { name: "Integrações", href: "/definicoes/integracoes", icon: Plug },
   { name: "QA", href: "/qa", icon: Bug },

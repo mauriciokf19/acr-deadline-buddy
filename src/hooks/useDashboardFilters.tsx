@@ -1,20 +1,20 @@
 import { useState, useEffect } from "react";
 
 interface DashboardFilters {
-  projetos: string[];
+  clientes: string[];
   tipos: string[];
   estados: string[];
   prioridades: string[];
   paises: string[];
 }
 
-const STORAGE_KEY = "acr-dashboard-filters";
+const STORAGE_KEY = "acr-dashboard-filters-v2";
 
 export function useDashboardFilters() {
   const [filters, setFilters] = useState<DashboardFilters>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     return saved ? JSON.parse(saved) : {
-      projetos: [],
+      clientes: [],
       tipos: [],
       estados: [],
       prioridades: [],
@@ -35,7 +35,7 @@ export function useDashboardFilters() {
 
   const clearFilters = () => {
     setFilters({
-      projetos: [],
+      clientes: [],
       tipos: [],
       estados: [],
       prioridades: [],
