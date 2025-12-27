@@ -123,8 +123,8 @@ async function getValidAccessToken(
       const encryptedAccessToken = await encryptToken(tokens.access_token);
       const newExpiry = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
 
-      await supabase
-        .from("email_accounts")
+      await (supabase
+        .from("email_accounts") as any)
         .update({
           oauth_access_token_encrypted: encryptedAccessToken,
           oauth_expiry: newExpiry,
