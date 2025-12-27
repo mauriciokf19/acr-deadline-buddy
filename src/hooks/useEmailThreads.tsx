@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import type { EmailThread, EmailMessage } from "@/types/email";
+import { isDemoMode, demoEmailMessages } from "@/lib/demoData";
+import { useDemoStore } from "@/lib/demoStore";
 
 interface ThreadFilters {
   status?: 'open' | 'snoozed' | 'closed';
@@ -15,10 +17,41 @@ interface ThreadFilters {
 // Fetch email threads
 export function useEmailThreads(filters?: ThreadFilters) {
   const { user } = useAuth();
+  const demoThreads = useDemoStore((state) => state.threads);
 
   return useQuery({
-    queryKey: ["email_threads", user?.id, filters],
+    queryKey: ["email_threads", user?.id, filters, isDemoMode()],
     queryFn: async (): Promise<EmailThread[]> => {
+      // DEMO MODE: Return filtered demo data
+      if (isDemoMode()) {
+        let filtered = [...demoThreads];
+        
+        if (filters?.status) {
+          filtered = filtered.filter((t) => t.status === filters.status);
+        }
+        if (filters?.importance) {
+          filtered = filtered.filter((t) => t.importance === filters.importance);
+        }
+        if (filters?.client_id) {
+          filtered = filtered.filter((t) => t.client_id === filters.client_id);
+        }
+        if (filters?.is_read !== undefined) {
+          filtered = filtered.filter((t) => t.is_read === filters.is_read);
+        }
+        if (filters?.search) {
+          const query = filters.search.toLowerCase();
+          filtered = filtered.filter((t) => 
+            t.subject?.toLowerCase().includes(query) || 
+            t.snippet?.toLowerCase().includes(query)
+          );
+        }
+        
+        return filtered.sort((a, b) => 
+          (b.last_message_at || "").localeCompare(a.last_message_at || "")
+        );
+      }
+
+      // PRODUCTION MODE: Use Supabase
       let query = supabase
         .from("email_threads")
         .select("*")
@@ -45,19 +78,31 @@ export function useEmailThreads(filters?: ThreadFilters) {
       if (error) throw error;
       return (data || []) as EmailThread[];
     },
-    enabled: !!user,
+    enabled: !!user || isDemoMode(),
   });
 }
 
 // Fetch single thread with messages
 export function useEmailThread(threadId: string | undefined) {
   const { user } = useAuth();
+  const demoThreads = useDemoStore((state) => state.threads);
+  const demoMessages = useDemoStore((state) => state.messages);
 
   return useQuery({
-    queryKey: ["email_threads", threadId],
+    queryKey: ["email_threads", threadId, isDemoMode()],
     queryFn: async (): Promise<{ thread: EmailThread; messages: EmailMessage[] } | null> => {
       if (!threadId) return null;
 
+      // DEMO MODE: Return demo data
+      if (isDemoMode()) {
+        const thread = demoThreads.find((t) => t.id === threadId);
+        if (!thread) return null;
+        
+        const messages = demoMessages[threadId] || [];
+        return { thread, messages };
+      }
+
+      // PRODUCTION MODE: Use Supabase
       const { data: thread, error: threadError } = await supabase
         .from("email_threads")
         .select("*")
@@ -98,16 +143,22 @@ export function useEmailThread(threadId: string | undefined) {
         messages: transformedMessages,
       };
     },
-    enabled: !!user && !!threadId,
+    enabled: (!!user || isDemoMode()) && !!threadId,
   });
 }
 
 // Mark thread as read
 export function useMarkThreadRead() {
   const queryClient = useQueryClient();
+  const markThreadRead = useDemoStore((state) => state.markThreadRead);
 
   return useMutation({
     mutationFn: async (threadId: string) => {
+      if (isDemoMode()) {
+        markThreadRead(threadId);
+        return;
+      }
+      
       const { error } = await supabase
         .from("email_threads")
         .update({ is_read: true, updated_at: new Date().toISOString() })
