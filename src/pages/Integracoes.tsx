@@ -73,9 +73,7 @@ export default function Integracoes() {
   const handleConnectGmail = async () => {
     setConnecting(true);
     try {
-      const url = await getOAuthUrl.mutateAsync({
-        redirectUri: `${window.location.origin}/definicoes/integracoes`,
-      });
+      const url = await getOAuthUrl.mutateAsync("gmail");
       
       // Redirect to Google OAuth
       window.location.href = url;

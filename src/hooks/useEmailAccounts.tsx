@@ -34,7 +34,7 @@ export function useGetOAuthUrl() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (provider: EmailProvider): Promise<string> => {
+    mutationFn: async (provider: "gmail"): Promise<string> => {
       if (!user) throw new Error("Utilizador não autenticado");
       
       // Only gmail supported in MVP
