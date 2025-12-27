@@ -3,14 +3,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import type { EmailAccount, EmailProvider } from "@/types/email";
+import { isDemoMode, demoEmailAccount } from "@/lib/demoData";
 
 // Fetch user's email accounts
 export function useEmailAccounts() {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["email_accounts", user?.id],
+    queryKey: ["email_accounts", user?.id, isDemoMode()],
     queryFn: async (): Promise<EmailAccount[]> => {
+      // DEMO MODE: Return demo account
+      if (isDemoMode()) {
+        return [demoEmailAccount];
+      }
+
       const { data, error } = await supabase
         .from("email_accounts")
         .select("*")
@@ -25,7 +31,7 @@ export function useEmailAccounts() {
       
       return gmailAccounts as EmailAccount[];
     },
-    enabled: !!user,
+    enabled: !!user || isDemoMode(),
   });
 }
 
