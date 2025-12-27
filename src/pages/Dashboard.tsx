@@ -14,6 +14,8 @@ import { startOfWeek, endOfWeek, addDays, isToday, isBefore, startOfDay } from "
 import { getTodayPT } from "@/lib/dateUtils";
 import { toZonedTime } from "date-fns-tz";
 import { toast } from "sonner";
+import { Beaker } from "lucide-react";
+import { isDemoMode } from "@/lib/demoData";
 import type { TaskWithRelations } from "@/types/tasks";
 
 export default function Dashboard() {
@@ -372,6 +374,15 @@ export default function Dashboard() {
   return (
     <Layout>
       <div className="container mx-auto max-w-2xl space-y-6 p-4 pb-24">
+        {/* Demo Mode Banner */}
+        {isDemoMode() && (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400">
+            <Beaker className="h-4 w-4" />
+            <span className="text-sm font-medium">Demo Mode</span>
+            <span className="text-xs text-muted-foreground">• Dados fictícios para testes</span>
+          </div>
+        )}
+
         {/* Header */}
         <div className="space-y-2">
           <h1 className="text-2xl font-bold">Dashboard</h1>
