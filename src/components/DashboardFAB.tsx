@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { Plus, FolderKanban, ClipboardCheck, CheckSquare } from "lucide-react";
+import { Plus, ClipboardCheck, CheckSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ProjetoForm } from "@/components/ProjetoForm";
 import { ObrigacaoForm } from "@/components/ObrigacaoForm";
 import { TarefaForm } from "@/components/TarefaForm";
 import { cn } from "@/lib/utils";
 
-type ActionType = "projeto" | "obrigacao" | "tarefa" | null;
+type ActionType = "obrigacao" | "tarefa" | null;
 
 export function DashboardFAB() {
   const [expanded, setExpanded] = useState(false);
@@ -25,12 +24,6 @@ export function DashboardFAB() {
   };
 
   const actions = [
-    {
-      type: "projeto" as const,
-      label: "Novo Projeto",
-      icon: FolderKanban,
-      color: "bg-blue-500 hover:bg-blue-600",
-    },
     {
       type: "obrigacao" as const,
       label: "Nova Obrigação",
@@ -74,13 +67,6 @@ export function DashboardFAB() {
         </Button>
       </div>
 
-      {actionType === "projeto" && (
-        <ProjetoForm 
-          open={dialogOpen} 
-          onOpenChange={setDialogOpen}
-          onSuccess={handleSuccess} 
-        />
-      )}
       {actionType === "obrigacao" && (
         <ObrigacaoForm 
           open={dialogOpen} 

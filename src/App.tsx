@@ -7,11 +7,8 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
-import Projetos from "./pages/Projetos";
-import ProjetoDetail from "./pages/ProjetoDetail";
 import Obrigacoes from "./pages/Obrigacoes";
 import Tarefas from "./pages/Tarefas";
-import Lembretes from "./pages/Lembretes";
 import Calendario from "./pages/Calendario";
 import Alertas from "./pages/Alertas";
 import Definicoes from "./pages/Definicoes";
@@ -81,22 +78,6 @@ const App = () => (
               }
             />
             <Route
-              path="/projetos"
-              element={
-                <ProtectedRoute>
-                  <Projetos />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/projetos/:id"
-              element={
-                <ProtectedRoute>
-                  <ProjetoDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/obrigacoes"
               element={
                 <ProtectedRoute>
@@ -145,14 +126,6 @@ const App = () => (
               }
             />
             <Route
-              path="/lembretes"
-              element={
-                <ProtectedRoute>
-                  <Lembretes />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/templates"
               element={
                 <ProtectedRoute>
@@ -176,6 +149,10 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            {/* Redirect old project routes to clients */}
+            <Route path="/projetos" element={<Navigate to="/clientes" replace />} />
+            <Route path="/projetos/:id" element={<Navigate to="/clientes" replace />} />
+            <Route path="/lembretes" element={<Navigate to="/alertas" replace />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -654,6 +654,7 @@ export type Database = {
       obrigacoes: {
         Row: {
           aprovado_em: string | null
+          client_id: string | null
           comprovativo_mime: string | null
           comprovativo_nome_original: string | null
           comprovativo_size_bytes: number | null
@@ -685,6 +686,7 @@ export type Database = {
         }
         Insert: {
           aprovado_em?: string | null
+          client_id?: string | null
           comprovativo_mime?: string | null
           comprovativo_nome_original?: string | null
           comprovativo_size_bytes?: number | null
@@ -716,6 +718,7 @@ export type Database = {
         }
         Update: {
           aprovado_em?: string | null
+          client_id?: string | null
           comprovativo_mime?: string | null
           comprovativo_nome_original?: string | null
           comprovativo_size_bytes?: number | null
@@ -746,6 +749,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "obrigacoes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "obrigacoes_projeto_id_fkey"
             columns: ["projeto_id"]
@@ -972,6 +982,7 @@ export type Database = {
       template_instancias: {
         Row: {
           ano_fiscal: number
+          client_id: string | null
           created_at: string
           id: string
           obrigacoes_geradas: number
@@ -983,6 +994,7 @@ export type Database = {
         }
         Insert: {
           ano_fiscal: number
+          client_id?: string | null
           created_at?: string
           id?: string
           obrigacoes_geradas?: number
@@ -994,6 +1006,7 @@ export type Database = {
         }
         Update: {
           ano_fiscal?: number
+          client_id?: string | null
           created_at?: string
           id?: string
           obrigacoes_geradas?: number
@@ -1004,6 +1017,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "template_instancias_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "template_instancias_projeto_id_fkey"
             columns: ["projeto_id"]
@@ -1090,6 +1110,7 @@ export type Database = {
         Row: {
           client_id: string | null
           created_at: string | null
+          deprecated_at: string | null
           external_id: string
           external_table: string
           id: string
@@ -1102,6 +1123,7 @@ export type Database = {
         Insert: {
           client_id?: string | null
           created_at?: string | null
+          deprecated_at?: string | null
           external_id: string
           external_table: string
           id?: string
@@ -1114,6 +1136,7 @@ export type Database = {
         Update: {
           client_id?: string | null
           created_at?: string | null
+          deprecated_at?: string | null
           external_id?: string
           external_table?: string
           id?: string
