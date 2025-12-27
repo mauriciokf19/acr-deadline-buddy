@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useClient, useClientContacts, useCreateContact, useUpdateContact, useDeleteContact } from "@/hooks/useClients";
 import { useClientActivity } from "@/hooks/useActivityLog";
 import { formatDateTimePT, formatDatePT } from "@/lib/gmailProvider";
+import { DemoModeBanner } from "@/components/DemoModeBanner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -191,6 +192,7 @@ export default function ClientDetail() {
   return (
     <Layout>
       <div className="container mx-auto p-4 space-y-6">
+        <DemoModeBanner />
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild aria-label="Voltar">
