@@ -47,7 +47,15 @@ export default function Clientes() {
     if (!form.name.trim()) return;
 
     try {
-      await createClient.mutateAsync(form);
+      await createClient.mutateAsync({
+        name: form.name,
+        vat_number: form.vat_number || null,
+        email: form.email || null,
+        phone: form.phone || null,
+        address: form.address || null,
+        notes: null,
+        legacy_cliente_id: null,
+      });
       toast.success("Cliente criado!");
       setDialogOpen(false);
       setForm({ name: "", vat_number: "", email: "", phone: "", address: "" });

@@ -149,13 +149,18 @@ export function useCreateContact() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (params: Omit<Contact, "id" | "created_at" | "updated_at" | "deleted_at" | "owner_id" | "tenant_id">) => {
+    mutationFn: async (params: { client_id: string; name: string; email?: string; phone?: string; role?: string; is_primary?: boolean }) => {
       if (!user) throw new Error("Utilizador não autenticado");
 
       const { data, error } = await supabase
         .from("contacts")
         .insert({
-          ...params,
+          client_id: params.client_id,
+          name: params.name,
+          email: params.email || null,
+          phone: params.phone || null,
+          role: params.role || null,
+          is_primary: params.is_primary ?? false,
           owner_id: user.id,
           tenant_id: user.id,
         })
@@ -167,10 +172,89 @@ export function useCreateContact() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["clients", data.client_id] });
+      queryClient.invalidateQueries({ queryKey: ["client_contacts", data.client_id] });
       toast.success("Contacto criado com sucesso");
     },
     onError: (error) => {
       toast.error(`Erro ao criar contacto: ${error.message}`);
+    },
+  });
+}
+
+// List contacts for a client
+export function useClientContacts(clientId: string | undefined) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["client_contacts", clientId],
+    queryFn: async (): Promise<Contact[]> => {
+      if (!clientId) return [];
+
+      const { data, error } = await supabase
+        .from("contacts")
+        .select("*")
+        .eq("client_id", clientId)
+        .is("deleted_at", null)
+        .order("is_primary", { ascending: false })
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user && !!clientId,
+  });
+}
+
+// Update contact
+export function useUpdateContact() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...params }: { id: string; name?: string; email?: string; phone?: string; role?: string; is_primary?: boolean }) => {
+      const { data, error } = await supabase
+        .from("contacts")
+        .update({ ...params, updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["clients", data.client_id] });
+      queryClient.invalidateQueries({ queryKey: ["client_contacts", data.client_id] });
+      toast.success("Contacto atualizado com sucesso");
+    },
+    onError: (error) => {
+      toast.error(`Erro ao atualizar contacto: ${error.message}`);
+    },
+  });
+}
+
+// Delete contact (soft delete)
+export function useDeleteContact() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (contactId: string) => {
+      const { data, error } = await supabase
+        .from("contacts")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", contactId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["clients", data.client_id] });
+      queryClient.invalidateQueries({ queryKey: ["client_contacts", data.client_id] });
+      toast.success("Contacto eliminado com sucesso");
+    },
+    onError: (error) => {
+      toast.error(`Erro ao eliminar contacto: ${error.message}`);
     },
   });
 }

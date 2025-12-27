@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Auth from "./pages/Auth";
@@ -19,6 +19,11 @@ import Templates from "./pages/Templates";
 import Dev from "./pages/Dev";
 import QA from "./pages/QA";
 import NotFound from "./pages/NotFound";
+import Inbox from "./pages/Inbox";
+import InboxThread from "./pages/InboxThread";
+import Clientes from "./pages/Clientes";
+import ClientDetail from "./pages/ClientDetail";
+import Integracoes from "./pages/Integracoes";
 
 const queryClient = new QueryClient();
 
@@ -33,9 +38,45 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route
               path="/"
+              element={<Navigate to="/dashboard" replace />}
+            />
+            <Route
+              path="/dashboard"
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/inbox"
+              element={
+                <ProtectedRoute>
+                  <Inbox />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/inbox/:id"
+              element={
+                <ProtectedRoute>
+                  <InboxThread />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/clientes"
+              element={
+                <ProtectedRoute>
+                  <Clientes />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/clientes/:id"
+              element={
+                <ProtectedRoute>
+                  <ClientDetail />
                 </ProtectedRoute>
               }
             />
@@ -84,6 +125,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Definicoes />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/definicoes/integracoes"
+              element={
+                <ProtectedRoute>
+                  <Integracoes />
                 </ProtectedRoute>
               }
             />
