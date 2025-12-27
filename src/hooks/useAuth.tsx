@@ -2,6 +2,29 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
+import { isDemoMode } from "@/lib/demoData";
+
+// Demo user for Demo Mode
+const DEMO_USER: User = {
+  id: "demo-user-id",
+  aud: "authenticated",
+  role: "authenticated",
+  email: "demo@exemplo.pt",
+  email_confirmed_at: new Date().toISOString(),
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  app_metadata: {},
+  user_metadata: { nome: "Utilizador Demo" },
+} as User;
+
+const DEMO_SESSION: Session = {
+  access_token: "demo-access-token",
+  token_type: "bearer",
+  expires_in: 3600,
+  refresh_token: "demo-refresh-token",
+  user: DEMO_USER,
+  expires_at: Math.floor(Date.now() / 1000) + 3600,
+} as Session;
 
 interface AuthContextType {
   user: User | null;
@@ -15,12 +38,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(isDemoMode() ? DEMO_USER : null);
+  const [session, setSession] = useState<Session | null>(isDemoMode() ? DEMO_SESSION : null);
+  const [loading, setLoading] = useState(!isDemoMode());
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Skip auth setup in demo mode
+    if (isDemoMode()) {
+      return;
+    }
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -75,6 +103,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    if (isDemoMode()) {
+      // In demo mode, just redirect to auth page (simulated)
+      navigate("/auth");
+      return;
+    }
     await supabase.auth.signOut();
     navigate("/auth");
   };
