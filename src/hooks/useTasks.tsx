@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import type { Task, TaskWithRelations, CreateTaskParams, UpdateTaskParams } from "@/types/tasks";
+import { isDemoMode } from "@/lib/demoData";
+import { useDemoStore } from "@/lib/demoStore";
 
 // Fetch all tasks
 export function useTasks(filters?: {
@@ -13,10 +15,37 @@ export function useTasks(filters?: {
   due_to?: string;
 }) {
   const { user } = useAuth();
+  const demoTasks = useDemoStore((state) => state.tasks);
 
   return useQuery({
-    queryKey: ["tasks", user?.id, filters],
+    queryKey: ["tasks", user?.id, filters, isDemoMode()],
     queryFn: async (): Promise<TaskWithRelations[]> => {
+      // DEMO MODE: Return filtered demo tasks
+      if (isDemoMode()) {
+        let filtered = demoTasks.filter((t) => !t.deleted_at);
+        
+        if (filters?.status) {
+          filtered = filtered.filter((t) => t.status === filters.status);
+        }
+        if (filters?.assignee_id) {
+          filtered = filtered.filter((t) => t.assignee_id === filters.assignee_id);
+        }
+        if (filters?.client_id) {
+          filtered = filtered.filter((t) => t.client_id === filters.client_id);
+        }
+        if (filters?.due_from) {
+          filtered = filtered.filter((t) => t.due_date && t.due_date >= filters.due_from!);
+        }
+        if (filters?.due_to) {
+          filtered = filtered.filter((t) => t.due_date && t.due_date <= filters.due_to!);
+        }
+        
+        return filtered.sort((a, b) => 
+          (b.created_at || "").localeCompare(a.created_at || "")
+        );
+      }
+
+      // PRODUCTION MODE: Use Supabase
       let query = supabase
         .from("tasks")
         .select(`
@@ -48,18 +77,24 @@ export function useTasks(filters?: {
       if (error) throw error;
       return (data || []) as TaskWithRelations[];
     },
-    enabled: !!user,
+    enabled: !!user || isDemoMode(),
   });
 }
 
 // Fetch single task
 export function useTask(taskId: string | undefined) {
   const { user } = useAuth();
+  const demoTasks = useDemoStore((state) => state.tasks);
 
   return useQuery({
-    queryKey: ["tasks", taskId],
+    queryKey: ["tasks", taskId, isDemoMode()],
     queryFn: async (): Promise<TaskWithRelations | null> => {
       if (!taskId) return null;
+
+      // DEMO MODE
+      if (isDemoMode()) {
+        return demoTasks.find((t) => t.id === taskId && !t.deleted_at) || null;
+      }
 
       const { data, error } = await supabase
         .from("tasks")
@@ -75,7 +110,7 @@ export function useTask(taskId: string | undefined) {
       if (error) throw error;
       return data as TaskWithRelations;
     },
-    enabled: !!user && !!taskId,
+    enabled: (!!user || isDemoMode()) && !!taskId,
   });
 }
 
@@ -83,9 +118,25 @@ export function useTask(taskId: string | undefined) {
 export function useCreateTask() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const createTask = useDemoStore((state) => state.createTask);
 
   return useMutation({
     mutationFn: async (params: CreateTaskParams) => {
+      // DEMO MODE
+      if (isDemoMode()) {
+        createTask({
+          ...params,
+          status: params.status || "todo",
+          priority: params.priority || "medium",
+          owner_id: "demo-user-id",
+          tenant_id: "demo-user-id",
+          assignee_id: params.assignee_id || "demo-user-id",
+          completed_at: null,
+          deleted_at: null,
+        } as any);
+        return { id: `demo-${Date.now()}` };
+      }
+
       if (!user) throw new Error("Utilizador não autenticado");
 
       const { data, error } = await supabase
@@ -114,6 +165,7 @@ export function useCreateTask() {
 // Update task
 export function useUpdateTask() {
   const queryClient = useQueryClient();
+  const updateTask = useDemoStore((state) => state.updateTask);
 
   return useMutation({
     mutationFn: async ({ id, ...params }: UpdateTaskParams & { id: string }) => {
@@ -129,6 +181,12 @@ export function useUpdateTask() {
         updateData.completed_at = null;
       }
 
+      // DEMO MODE
+      if (isDemoMode()) {
+        updateTask(id, updateData as any);
+        return { id, ...updateData };
+      }
+
       const { data, error } = await supabase
         .from("tasks")
         .update(updateData)
@@ -141,7 +199,9 @@ export function useUpdateTask() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["tasks", data.id] });
+      if (data?.id) {
+        queryClient.invalidateQueries({ queryKey: ["tasks", data.id] });
+      }
       toast.success("Tarefa atualizada com sucesso");
     },
     onError: (error) => {
@@ -153,9 +213,16 @@ export function useUpdateTask() {
 // Delete task (soft delete)
 export function useDeleteTask() {
   const queryClient = useQueryClient();
+  const updateTask = useDemoStore((state) => state.updateTask);
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // DEMO MODE
+      if (isDemoMode()) {
+        updateTask(id, { deleted_at: new Date().toISOString() } as any);
+        return;
+      }
+
       const { error } = await supabase
         .from("tasks")
         .update({ deleted_at: new Date().toISOString() })
@@ -175,11 +242,16 @@ export function useDeleteTask() {
 
 // Quick action: Complete task
 export function useCompleteTask() {
-  const updateTask = useUpdateTask();
+  const updateTaskMutation = useUpdateTask();
+  const completeTask = useDemoStore((state) => state.completeTask);
 
   return useMutation({
     mutationFn: async (id: string) => {
-      return updateTask.mutateAsync({ id, status: "done" });
+      if (isDemoMode()) {
+        completeTask(id);
+        return { id };
+      }
+      return updateTaskMutation.mutateAsync({ id, status: "done" });
     },
   });
 }

@@ -176,9 +176,15 @@ export function useMarkThreadRead() {
 // Snooze thread
 export function useSnoozeThread() {
   const queryClient = useQueryClient();
+  const snoozeThread = useDemoStore((state) => state.snoozeThread);
 
   return useMutation({
     mutationFn: async ({ threadId, until }: { threadId: string; until: string }) => {
+      if (isDemoMode()) {
+        snoozeThread(threadId, until);
+        return;
+      }
+      
       const { error } = await supabase
         .from("email_threads")
         .update({
@@ -203,9 +209,15 @@ export function useSnoozeThread() {
 // Close thread
 export function useCloseThread() {
   const queryClient = useQueryClient();
+  const closeThread = useDemoStore((state) => state.closeThread);
 
   return useMutation({
     mutationFn: async (threadId: string) => {
+      if (isDemoMode()) {
+        closeThread(threadId);
+        return;
+      }
+      
       const { error } = await supabase
         .from("email_threads")
         .update({
@@ -229,9 +241,15 @@ export function useCloseThread() {
 // Reopen thread
 export function useReopenThread() {
   const queryClient = useQueryClient();
+  const reopenThread = useDemoStore((state) => state.reopenThread);
 
   return useMutation({
     mutationFn: async (threadId: string) => {
+      if (isDemoMode()) {
+        reopenThread(threadId);
+        return;
+      }
+      
       const { error } = await supabase
         .from("email_threads")
         .update({
@@ -256,9 +274,15 @@ export function useReopenThread() {
 // Set thread importance
 export function useSetThreadImportance() {
   const queryClient = useQueryClient();
+  const setThreadImportance = useDemoStore((state) => state.setThreadImportance);
 
   return useMutation({
     mutationFn: async ({ threadId, importance }: { threadId: string; importance: 'normal' | 'high' }) => {
+      if (isDemoMode()) {
+        setThreadImportance(threadId, importance);
+        return;
+      }
+      
       const { error } = await supabase
         .from("email_threads")
         .update({
@@ -282,9 +306,15 @@ export function useSetThreadImportance() {
 // Link thread to client
 export function useLinkThreadToClient() {
   const queryClient = useQueryClient();
+  const linkThreadToClient = useDemoStore((state) => state.linkThreadToClient);
 
   return useMutation({
     mutationFn: async ({ threadId, clientId }: { threadId: string; clientId: string | null }) => {
+      if (isDemoMode()) {
+        linkThreadToClient(threadId, clientId);
+        return;
+      }
+      
       const { error } = await supabase
         .from("email_threads")
         .update({

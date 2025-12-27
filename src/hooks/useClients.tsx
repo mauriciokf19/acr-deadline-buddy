@@ -3,14 +3,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import type { Client, Contact, ClientWithContacts } from "@/types/clients";
+import { isDemoMode, demoClient, demoContacts } from "@/lib/demoData";
+import { useDemoStore } from "@/lib/demoStore";
 
 // Fetch all clients
 export function useClients() {
   const { user } = useAuth();
+  const demoClients = useDemoStore((state) => state.clients);
 
   return useQuery({
-    queryKey: ["clients", user?.id],
+    queryKey: ["clients", user?.id, isDemoMode()],
     queryFn: async (): Promise<Client[]> => {
+      // DEMO MODE
+      if (isDemoMode()) {
+        return demoClients.filter((c) => !c.deleted_at);
+      }
+
       const { data, error } = await supabase
         .from("clients")
         .select("*")
@@ -20,18 +28,32 @@ export function useClients() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user,
+    enabled: !!user || isDemoMode(),
   });
 }
 
 // Fetch single client with contacts
 export function useClient(clientId: string | undefined) {
   const { user } = useAuth();
+  const demoClients = useDemoStore((state) => state.clients);
+  const demoContactsList = useDemoStore((state) => state.contacts);
 
   return useQuery({
-    queryKey: ["clients", clientId],
+    queryKey: ["clients", clientId, isDemoMode()],
     queryFn: async (): Promise<ClientWithContacts | null> => {
       if (!clientId) return null;
+
+      // DEMO MODE
+      if (isDemoMode()) {
+        const client = demoClients.find((c) => c.id === clientId && !c.deleted_at);
+        if (!client) return null;
+        
+        const contacts = demoContactsList.filter(
+          (c) => c.client_id === clientId && !c.deleted_at
+        );
+        
+        return { ...client, contacts };
+      }
 
       const { data: client, error: clientError } = await supabase
         .from("clients")
@@ -57,7 +79,7 @@ export function useClient(clientId: string | undefined) {
         contacts: contacts || [],
       };
     },
-    enabled: !!user && !!clientId,
+    enabled: (!!user || isDemoMode()) && !!clientId,
   });
 }
 
@@ -147,9 +169,26 @@ export function useDeleteClient() {
 export function useCreateContact() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const createContact = useDemoStore((state) => state.createContact);
 
   return useMutation({
     mutationFn: async (params: { client_id: string; name: string; email?: string; phone?: string; role?: string; is_primary?: boolean }) => {
+      // DEMO MODE
+      if (isDemoMode()) {
+        createContact({
+          client_id: params.client_id,
+          name: params.name,
+          email: params.email || null,
+          phone: params.phone || null,
+          role: params.role || null,
+          is_primary: params.is_primary ?? false,
+          owner_id: "demo-user-id",
+          tenant_id: "demo-user-id",
+          deleted_at: null,
+        });
+        return { client_id: params.client_id };
+      }
+
       if (!user) throw new Error("Utilizador não autenticado");
 
       const { data, error } = await supabase
@@ -184,11 +223,23 @@ export function useCreateContact() {
 // List contacts for a client
 export function useClientContacts(clientId: string | undefined) {
   const { user } = useAuth();
+  const demoContactsList = useDemoStore((state) => state.contacts);
 
   return useQuery({
-    queryKey: ["client_contacts", clientId],
+    queryKey: ["client_contacts", clientId, isDemoMode()],
     queryFn: async (): Promise<Contact[]> => {
       if (!clientId) return [];
+
+      // DEMO MODE
+      if (isDemoMode()) {
+        return demoContactsList
+          .filter((c) => c.client_id === clientId && !c.deleted_at)
+          .sort((a, b) => {
+            if (a.is_primary && !b.is_primary) return -1;
+            if (!a.is_primary && b.is_primary) return 1;
+            return (b.created_at || "").localeCompare(a.created_at || "");
+          });
+      }
 
       const { data, error } = await supabase
         .from("contacts")
@@ -201,16 +252,26 @@ export function useClientContacts(clientId: string | undefined) {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user && !!clientId,
+    enabled: (!!user || isDemoMode()) && !!clientId,
   });
 }
 
 // Update contact
 export function useUpdateContact() {
   const queryClient = useQueryClient();
+  const updateContact = useDemoStore((state) => state.updateContact);
 
   return useMutation({
     mutationFn: async ({ id, ...params }: { id: string; name?: string; email?: string; phone?: string; role?: string; is_primary?: boolean }) => {
+      // DEMO MODE
+      if (isDemoMode()) {
+        updateContact(id, params);
+        // Return a mock with client_id for invalidation
+        const contacts = useDemoStore.getState().contacts;
+        const contact = contacts.find((c) => c.id === id);
+        return { client_id: contact?.client_id };
+      }
+
       const { data, error } = await supabase
         .from("contacts")
         .update({ ...params, updated_at: new Date().toISOString() })
@@ -222,8 +283,10 @@ export function useUpdateContact() {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["clients", data.client_id] });
-      queryClient.invalidateQueries({ queryKey: ["client_contacts", data.client_id] });
+      if (data?.client_id) {
+        queryClient.invalidateQueries({ queryKey: ["clients", data.client_id] });
+        queryClient.invalidateQueries({ queryKey: ["client_contacts", data.client_id] });
+      }
       toast.success("Contacto atualizado com sucesso");
     },
     onError: (error) => {
@@ -235,9 +298,18 @@ export function useUpdateContact() {
 // Delete contact (soft delete)
 export function useDeleteContact() {
   const queryClient = useQueryClient();
+  const deleteContact = useDemoStore((state) => state.deleteContact);
 
   return useMutation({
     mutationFn: async (contactId: string) => {
+      // DEMO MODE
+      if (isDemoMode()) {
+        const contacts = useDemoStore.getState().contacts;
+        const contact = contacts.find((c) => c.id === contactId);
+        deleteContact(contactId);
+        return { client_id: contact?.client_id };
+      }
+
       const { data, error } = await supabase
         .from("contacts")
         .update({ deleted_at: new Date().toISOString() })
@@ -249,8 +321,10 @@ export function useDeleteContact() {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["clients", data.client_id] });
-      queryClient.invalidateQueries({ queryKey: ["client_contacts", data.client_id] });
+      if (data?.client_id) {
+        queryClient.invalidateQueries({ queryKey: ["clients", data.client_id] });
+        queryClient.invalidateQueries({ queryKey: ["client_contacts", data.client_id] });
+      }
       toast.success("Contacto eliminado com sucesso");
     },
     onError: (error) => {

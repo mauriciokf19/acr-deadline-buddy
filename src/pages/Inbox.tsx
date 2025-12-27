@@ -2,6 +2,7 @@ import { Layout } from "@/components/Layout";
 import { useEmailThreads, useMarkThreadRead, useSnoozeThread, useCloseThread, useReopenThread } from "@/hooks/useEmailThreads";
 import { useEmailAccounts } from "@/hooks/useEmailAccounts";
 import { formatRelativeTimePT } from "@/lib/gmailProvider";
+import { isDemoMode } from "@/lib/demoData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,8 @@ import {
   User,
   Filter,
   RefreshCw,
-  Inbox as InboxIcon
+  Inbox as InboxIcon,
+  Beaker
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -113,6 +115,15 @@ export default function Inbox() {
   return (
     <Layout>
       <div className="container mx-auto p-4 space-y-4">
+        {/* Demo Mode Banner */}
+        {isDemoMode() && (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400">
+            <Beaker className="h-4 w-4" />
+            <span className="text-sm font-medium">Demo Mode</span>
+            <span className="text-xs text-muted-foreground">• Dados fictícios para testes</span>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
