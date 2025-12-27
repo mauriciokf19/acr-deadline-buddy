@@ -14,7 +14,10 @@ import {
   demoObrigacoes,
   demoWorkItemLinks,
   demoEmailAccount,
-  isDemoMode
+  isDemoMode,
+  enableDemoMode,
+  disableDemoMode,
+  toggleDemoMode
 } from "./demoData";
 import type { EmailThread, EmailMessage } from "@/types/email";
 import type { TaskWithRelations } from "@/types/tasks";
@@ -330,5 +333,5 @@ export const useDemoStore = create<DemoState>((set, get) => ({
   },
 }));
 
-// Re-export isDemoMode for convenience
-export { isDemoMode };
+// Re-export demo mode utilities for convenience
+export { isDemoMode, enableDemoMode, disableDemoMode, toggleDemoMode };
