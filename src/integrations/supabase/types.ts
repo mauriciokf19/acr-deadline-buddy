@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          tenant_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          tenant_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          tenant_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       alertas: {
         Row: {
           canal: string
@@ -85,6 +124,457 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      clients: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          deleted_at: string | null
+          email: string | null
+          id: string
+          legacy_cliente_id: string | null
+          name: string
+          notes: string | null
+          owner_id: string
+          phone: string | null
+          tenant_id: string
+          updated_at: string | null
+          vat_number: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          id?: string
+          legacy_cliente_id?: string | null
+          name: string
+          notes?: string | null
+          owner_id: string
+          phone?: string | null
+          tenant_id: string
+          updated_at?: string | null
+          vat_number?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          id?: string
+          legacy_cliente_id?: string | null
+          name?: string
+          notes?: string | null
+          owner_id?: string
+          phone?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+          vat_number?: string | null
+        }
+        Relationships: []
+      }
+      comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          is_internal: boolean | null
+          mentions: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          is_internal?: boolean | null
+          mentions?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          is_internal?: boolean | null
+          mentions?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      contacts: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          deleted_at: string | null
+          email: string | null
+          id: string
+          is_primary: boolean | null
+          name: string
+          owner_id: string
+          phone: string | null
+          role: string | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          id?: string
+          is_primary?: boolean | null
+          name: string
+          owner_id: string
+          phone?: string | null
+          role?: string | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          id?: string
+          is_primary?: boolean | null
+          name?: string
+          owner_id?: string
+          phone?: string | null
+          role?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contacts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_accounts: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          display_name: string | null
+          email_address: string
+          id: string
+          last_sync_at: string | null
+          oauth_access_token_encrypted: string | null
+          oauth_expiry: string | null
+          oauth_provider: string | null
+          oauth_refresh_token_encrypted: string | null
+          owner_id: string
+          provider: string
+          sync_error: string | null
+          sync_status: string | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          display_name?: string | null
+          email_address: string
+          id?: string
+          last_sync_at?: string | null
+          oauth_access_token_encrypted?: string | null
+          oauth_expiry?: string | null
+          oauth_provider?: string | null
+          oauth_refresh_token_encrypted?: string | null
+          owner_id: string
+          provider: string
+          sync_error?: string | null
+          sync_status?: string | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          display_name?: string | null
+          email_address?: string
+          id?: string
+          last_sync_at?: string | null
+          oauth_access_token_encrypted?: string | null
+          oauth_expiry?: string | null
+          oauth_provider?: string | null
+          oauth_refresh_token_encrypted?: string | null
+          owner_id?: string
+          provider?: string
+          sync_error?: string | null
+          sync_status?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      email_messages: {
+        Row: {
+          attachments: Json | null
+          bcc_addresses: Json | null
+          body_html: string | null
+          body_text: string | null
+          cc_addresses: Json | null
+          created_at: string | null
+          direction: string
+          external_message_id: string | null
+          from_address: string | null
+          from_name: string | null
+          id: string
+          sent_at: string | null
+          subject: string | null
+          thread_id: string
+          to_addresses: Json | null
+        }
+        Insert: {
+          attachments?: Json | null
+          bcc_addresses?: Json | null
+          body_html?: string | null
+          body_text?: string | null
+          cc_addresses?: Json | null
+          created_at?: string | null
+          direction: string
+          external_message_id?: string | null
+          from_address?: string | null
+          from_name?: string | null
+          id?: string
+          sent_at?: string | null
+          subject?: string | null
+          thread_id: string
+          to_addresses?: Json | null
+        }
+        Update: {
+          attachments?: Json | null
+          bcc_addresses?: Json | null
+          body_html?: string | null
+          body_text?: string | null
+          cc_addresses?: Json | null
+          created_at?: string | null
+          direction?: string
+          external_message_id?: string | null
+          from_address?: string | null
+          from_name?: string | null
+          id?: string
+          sent_at?: string | null
+          subject?: string | null
+          thread_id?: string
+          to_addresses?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "email_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_templates: {
+        Row: {
+          body_html: string
+          category: string | null
+          created_at: string | null
+          id: string
+          name: string
+          owner_id: string
+          subject: string | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          body_html: string
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          owner_id: string
+          subject?: string | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          body_html?: string
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          subject?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      email_threads: {
+        Row: {
+          account_id: string
+          client_id: string | null
+          created_at: string | null
+          external_thread_id: string | null
+          id: string
+          importance: string | null
+          is_read: boolean | null
+          last_message_at: string | null
+          message_count: number | null
+          owner_id: string
+          snippet: string | null
+          snoozed_until: string | null
+          status: string | null
+          subject: string | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          account_id: string
+          client_id?: string | null
+          created_at?: string | null
+          external_thread_id?: string | null
+          id?: string
+          importance?: string | null
+          is_read?: boolean | null
+          last_message_at?: string | null
+          message_count?: number | null
+          owner_id: string
+          snippet?: string | null
+          snoozed_until?: string | null
+          status?: string | null
+          subject?: string | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          account_id?: string
+          client_id?: string | null
+          created_at?: string | null
+          external_thread_id?: string | null
+          id?: string
+          importance?: string | null
+          is_read?: boolean | null
+          last_message_at?: string | null
+          message_count?: number | null
+          owner_id?: string
+          snippet?: string | null
+          snoozed_until?: string | null
+          status?: string | null
+          subject?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_threads_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "email_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_threads_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feature_flags: {
+        Row: {
+          created_at: string | null
+          enabled: boolean | null
+          flag_name: string
+          id: string
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          enabled?: boolean | null
+          flag_name: string
+          id?: string
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          enabled?: boolean | null
+          flag_name?: string
+          id?: string
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      files: {
+        Row: {
+          client_id: string | null
+          file_name: string
+          file_type: string | null
+          id: string
+          is_proof: boolean | null
+          mime_type: string | null
+          size_bytes: number | null
+          storage_key: string
+          tenant_id: string
+          uploaded_at: string | null
+          uploaded_by: string
+          work_item_link_id: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          file_name: string
+          file_type?: string | null
+          id?: string
+          is_proof?: boolean | null
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_key: string
+          tenant_id: string
+          uploaded_at?: string | null
+          uploaded_by: string
+          work_item_link_id?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          file_name?: string
+          file_type?: string | null
+          id?: string
+          is_proof?: boolean | null
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_key?: string
+          tenant_id?: string
+          uploaded_at?: string | null
+          uploaded_by?: string
+          work_item_link_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "files_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "files_work_item_link_id_fkey"
+            columns: ["work_item_link_id"]
+            isOneToOne: false
+            referencedRelation: "work_item_links"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lembretes: {
         Row: {
@@ -410,6 +900,75 @@ export type Database = {
           },
         ]
       }
+      tasks: {
+        Row: {
+          assignee_id: string | null
+          client_id: string | null
+          completed_at: string | null
+          created_at: string | null
+          deleted_at: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          linked_email_thread_id: string | null
+          owner_id: string
+          priority: string | null
+          status: string | null
+          tenant_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          assignee_id?: string | null
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          linked_email_thread_id?: string | null
+          owner_id: string
+          priority?: string | null
+          status?: string | null
+          tenant_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          assignee_id?: string | null
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          linked_email_thread_id?: string | null
+          owner_id?: string
+          priority?: string | null
+          status?: string | null
+          tenant_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_linked_email_thread_id_fkey"
+            columns: ["linked_email_thread_id"]
+            isOneToOne: false
+            referencedRelation: "email_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       template_instancias: {
         Row: {
           ano_fiscal: number
@@ -527,6 +1086,67 @@ export type Database = {
         }
         Relationships: []
       }
+      work_item_links: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          external_id: string
+          external_table: string
+          id: string
+          link_type: string | null
+          owner_id: string
+          task_id: string | null
+          tenant_id: string
+          thread_id: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string | null
+          external_id: string
+          external_table: string
+          id?: string
+          link_type?: string | null
+          owner_id: string
+          task_id?: string | null
+          tenant_id: string
+          thread_id?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string | null
+          external_id?: string
+          external_table?: string
+          id?: string
+          link_type?: string | null
+          owner_id?: string
+          task_id?: string | null
+          tenant_id?: string
+          thread_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_item_links_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_item_links_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_item_links_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "email_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -538,6 +1158,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      log_activity: {
+        Args: {
+          p_action: string
+          p_entity_id: string
+          p_entity_type: string
+          p_metadata?: Json
+        }
+        Returns: string
       }
     }
     Enums: {
