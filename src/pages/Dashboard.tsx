@@ -3,25 +3,38 @@ import { Layout } from "@/components/Layout";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { DashboardKPIs } from "@/components/DashboardKPIs";
+import { TaskKPIs } from "@/components/TaskKPIs";
 import { DashboardEventsList } from "@/components/DashboardEventsList";
 import { ProjetoProgress } from "@/components/ProjetoProgress";
+import { MyWeekList } from "@/components/MyWeekList";
 import { DashboardFAB } from "@/components/DashboardFAB";
 import { useDashboardFilters } from "@/hooks/useDashboardFilters";
-import { startOfWeek, endOfWeek, addDays } from "date-fns";
+import { useTasks, useUpdateTask } from "@/hooks/useTasks";
+import { startOfWeek, endOfWeek, addDays, isToday, isBefore, startOfDay } from "date-fns";
 import { getTodayPT } from "@/lib/dateUtils";
 import { toZonedTime } from "date-fns-tz";
+import { toast } from "sonner";
+import type { TaskWithRelations } from "@/types/tasks";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const { filters } = useDashboardFilters();
   const [loading, setLoading] = useState(true);
   
-  // KPIs
+  // KPIs de Obrigações
   const [kpis, setKpis] = useState({
     atrasadas: 0,
     vencemHoje: 0,
     estaSemana: 0,
     noPrazo: 0,
+  });
+
+  // KPIs de Tarefas
+  const [taskKpis, setTaskKpis] = useState({
+    total: 0,
+    overdue: 0,
+    dueToday: 0,
+    completed: 0,
   });
   
   // Eventos próximos 7 dias
@@ -29,6 +42,53 @@ export default function Dashboard() {
   
   // Progresso por projeto
   const [projetos, setProjeitos] = useState<any[]>([]);
+
+  // Tarefas - My Week
+  const todayPT = getTodayPT();
+  const weekStart = startOfWeek(todayPT, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(todayPT, { weekStartsOn: 1 });
+
+  const { data: allTasks = [], isLoading: tasksLoading } = useTasks();
+  const updateTask = useUpdateTask();
+
+  // Filtrar tarefas da semana
+  const myWeekTasks = allTasks.filter((task: TaskWithRelations) => {
+    if (!task.due_date) return false;
+    const dueDate = new Date(task.due_date);
+    // Include overdue + this week
+    return dueDate <= weekEnd;
+  }).sort((a, b) => {
+    // Sort: overdue first, then by date
+    const dateA = new Date(a.due_date!);
+    const dateB = new Date(b.due_date!);
+    return dateA.getTime() - dateB.getTime();
+  });
+
+  // Calcular KPIs de tarefas
+  useEffect(() => {
+    if (!allTasks) return;
+
+    const today = startOfDay(new Date());
+    const activeTasks = allTasks.filter(t => t.status !== "done");
+    const completedTasks = allTasks.filter(t => t.status === "done");
+    
+    const overdueTasks = activeTasks.filter(t => {
+      if (!t.due_date) return false;
+      return isBefore(new Date(t.due_date), today);
+    });
+
+    const dueTodayTasks = activeTasks.filter(t => {
+      if (!t.due_date) return false;
+      return isToday(new Date(t.due_date));
+    });
+
+    setTaskKpis({
+      total: activeTasks.length,
+      overdue: overdueTasks.length,
+      dueToday: dueTodayTasks.length,
+      completed: completedTasks.length,
+    });
+  }, [allTasks]);
 
   useEffect(() => {
     if (user) {
@@ -272,7 +332,34 @@ export default function Dashboard() {
     setProjeitos(top5);
   };
 
-  if (loading) {
+  // Handlers para My Week
+  const handleCompleteTask = async (taskId: string) => {
+    const task = allTasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const newStatus = task.status === "done" ? "todo" : "done";
+    try {
+      await updateTask.mutateAsync({ id: taskId, status: newStatus });
+    } catch (error) {
+      // Toast already handled by hook
+    }
+  };
+
+  const handleRescheduleTask = async (taskId: string, newDate: string) => {
+    try {
+      await updateTask.mutateAsync({ id: taskId, due_date: newDate });
+      toast.success("Tarefa adiada para amanhã");
+    } catch (error) {
+      // Toast already handled by hook
+    }
+  };
+
+  const handleReassignTask = (taskId: string) => {
+    // TODO: Open modal to reassign
+    toast.info("Funcionalidade de reatribuição em desenvolvimento");
+  };
+
+  if (loading && tasksLoading) {
     return (
       <Layout>
         <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -284,13 +371,39 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <div className="container mx-auto max-w-lg space-y-6 p-4 pb-24">
+      <div className="container mx-auto max-w-2xl space-y-6 p-4 pb-24">
         {/* Header */}
         <div className="space-y-2">
           <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-sm text-muted-foreground">
-            Visão geral das suas obrigações fiscais
+            Visão geral das suas obrigações e tarefas
           </p>
+        </div>
+
+        {/* KPIs de Tarefas */}
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold">Minhas Tarefas</h2>
+          <TaskKPIs 
+            total={taskKpis.total}
+            overdue={taskKpis.overdue}
+            dueToday={taskKpis.dueToday}
+            completed={taskKpis.completed}
+          />
+        </div>
+
+        {/* My Week */}
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold">My Week</h2>
+          <p className="text-xs text-muted-foreground">
+            Tarefas atrasadas e desta semana
+          </p>
+          <MyWeekList
+            tasks={myWeekTasks}
+            onComplete={handleCompleteTask}
+            onReschedule={handleRescheduleTask}
+            onReassign={handleReassignTask}
+            loading={tasksLoading}
+          />
         </div>
 
         {/* Legenda de cores */}
@@ -309,17 +422,20 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* KPIs */}
-        <DashboardKPIs
-          atrasadas={kpis.atrasadas}
-          vencemHoje={kpis.vencemHoje}
-          estaSemana={kpis.estaSemana}
-          noPrazo={kpis.noPrazo}
-        />
+        {/* KPIs de Obrigações */}
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold">Obrigações Fiscais</h2>
+          <DashboardKPIs
+            atrasadas={kpis.atrasadas}
+            vencemHoje={kpis.vencemHoje}
+            estaSemana={kpis.estaSemana}
+            noPrazo={kpis.noPrazo}
+          />
+        </div>
 
         {/* Hoje & Próximos 7 dias */}
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold">Hoje & Próximos 7 dias</h2>
+          <h2 className="text-lg font-semibold">Próximos 7 dias</h2>
           <DashboardEventsList eventos={eventos} />
         </div>
 
