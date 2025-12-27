@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { enableDemoMode, isDemoMode } from "@/lib/demoData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
-import { ClipboardCheck } from "lucide-react";
+import { ClipboardCheck, Beaker } from "lucide-react";
 
 export default function Auth() {
   const { user, signIn, signUp } = useAuth();
@@ -62,6 +63,18 @@ export default function Auth() {
 
     setLoading(false);
   };
+
+  const handleEnterDemo = () => {
+    enableDemoMode();
+    toast.success("Demo Mode activado!");
+    // Reload to enter demo mode
+    window.location.href = "/dashboard";
+  };
+
+  // If in demo mode, redirect to dashboard
+  if (isDemoMode()) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted p-4">
@@ -149,6 +162,21 @@ export default function Auth() {
               </form>
             </TabsContent>
           </Tabs>
+
+          {/* Demo Mode Button */}
+          <div className="mt-6 pt-6 border-t">
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={handleEnterDemo}
+            >
+              <Beaker className="h-4 w-4" />
+              Entrar em Demo Mode
+            </Button>
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              Testar a aplicação com dados fictícios
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

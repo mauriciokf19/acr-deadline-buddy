@@ -623,10 +623,31 @@ export const demoDocuments = [
 ];
 
 // ============================================
-// FUNÇÃO DE VERIFICAÇÃO
+// FUNÇÃO DE VERIFICAÇÃO E TOGGLE
 // ============================================
+const DEMO_MODE_KEY = "demo-mode-enabled";
+
 export function isDemoMode(): boolean {
+  // Check localStorage first, then env var
+  const localStorageValue = localStorage.getItem(DEMO_MODE_KEY);
+  if (localStorageValue !== null) {
+    return localStorageValue === "true";
+  }
   return import.meta.env.VITE_SEED_ENABLED === "true";
+}
+
+export function enableDemoMode(): void {
+  localStorage.setItem(DEMO_MODE_KEY, "true");
+}
+
+export function disableDemoMode(): void {
+  localStorage.setItem(DEMO_MODE_KEY, "false");
+}
+
+export function toggleDemoMode(): boolean {
+  const newValue = !isDemoMode();
+  localStorage.setItem(DEMO_MODE_KEY, String(newValue));
+  return newValue;
 }
 
 // ============================================
