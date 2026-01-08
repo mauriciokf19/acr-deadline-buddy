@@ -29,7 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Search } from "lucide-react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -37,17 +37,41 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { createLog } from "@/lib/logUtils";
 import { Database } from "@/integrations/supabase/types";
+import { isDemoMode } from "@/lib/demoData";
+import { demoClient } from "@/lib/demoData";
 
 type TipoObrigacao = Database["public"]["Enums"]["tipo_obrigacao"];
 type Periodicidade = Database["public"]["Enums"]["periodicidade"];
 
-const TIPOS_OBRIGACAO: TipoObrigacao[] = ["iva", "ies", "saft", "modelo_10", "modelo_22", "dmr", "ifs", "outro"];
+// Lista atualizada de tipos de obrigação (inclui os novos)
+const TIPOS_OBRIGACAO: TipoObrigacao[] = [
+  "iva", "ies", "saft", "modelo_10", "modelo_22", "dmr", "ifs", 
+  "retencoes", "modelo_30", "cope", "recapitulativa", "dmis", "iuc", "outro"
+];
+
+const TIPOS_LABELS: Record<string, string> = {
+  iva: "IVA",
+  ies: "IES",
+  saft: "SAF-T",
+  modelo_10: "Modelo 10",
+  modelo_22: "Modelo 22",
+  dmr: "DMR",
+  ifs: "IFS",
+  retencoes: "Retenções",
+  modelo_30: "Modelo 30",
+  cope: "COPE",
+  recapitulativa: "Recapitulativa",
+  dmis: "DMIS",
+  iuc: "IUC",
+  outro: "Outro",
+};
+
 const PERIODICIDADES: Periodicidade[] = ["mensal", "trimestral", "anual", "pontual"];
 
 const obrigacaoSchema = z.object({
   titulo: z.string().min(1, "Título é obrigatório"),
-  projeto_id: z.string().min(1, "Projeto é obrigatório"),
-  tipo: z.enum(TIPOS_OBRIGACAO as [TipoObrigacao, ...TipoObrigacao[]]),
+  client_id: z.string().min(1, "Seleciona o cliente"),
+  tipo: z.string().min(1, "Tipo é obrigatório"),
   periodicidade: z.enum(PERIODICIDADES as [Periodicidade, ...Periodicidade[]]),
   periodo_referencia: z.string().optional(),
   deadline_revisao_senior: z.date(),
@@ -56,14 +80,14 @@ const obrigacaoSchema = z.object({
   prioridade: z.enum(["Alta", "Media", "Baixa"]).default("Media"),
   comentarios: z.string().optional(),
 }).refine((data) => {
-  return data.deadline_revisao_senior < data.deadline_interna;
+  return data.deadline_revisao_senior <= data.deadline_interna;
 }, {
-  message: "Deadline de revisão deve ser antes da deadline interna",
+  message: "Data de revisão deve ser antes ou igual à data interna",
   path: ["deadline_revisao_senior"],
 }).refine((data) => {
-  return data.deadline_interna < data.deadline_oficial;
+  return data.deadline_interna <= data.deadline_oficial;
 }, {
-  message: "Deadline interna deve ser antes da deadline oficial",
+  message: "Data interna deve ser antes ou igual à data oficial",
   path: ["deadline_interna"],
 });
 
@@ -73,7 +97,7 @@ interface ObrigacaoFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   obrigacao?: any;
-  projetoId?: string;
+  clientId?: string;
   onSuccess: () => void;
 }
 
@@ -81,17 +105,18 @@ export function ObrigacaoForm({
   open, 
   onOpenChange, 
   obrigacao, 
-  projetoId,
+  clientId,
   onSuccess 
 }: ObrigacaoFormProps) {
   const [loading, setLoading] = useState(false);
-  const [projetos, setProjetos] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const form = useForm<ObrigacaoFormData>({
     resolver: zodResolver(obrigacaoSchema),
     defaultValues: {
       titulo: obrigacao?.titulo || "",
-      projeto_id: obrigacao?.projeto_id || projetoId || "",
+      client_id: obrigacao?.client_id || clientId || "",
       tipo: obrigacao?.tipo || "iva",
       periodicidade: obrigacao?.periodicidade || "mensal",
       periodo_referencia: obrigacao?.periodo_referencia || "",
@@ -99,36 +124,69 @@ export function ObrigacaoForm({
       deadline_interna: obrigacao?.deadline_interna ? new Date(obrigacao.deadline_interna) : new Date(),
       deadline_oficial: obrigacao?.deadline_oficial ? new Date(obrigacao.deadline_oficial) : new Date(),
       prioridade: obrigacao?.prioridade || "Media",
-      comentarios: obrigacao?.comentarios || "",
+      comentarios: obrigacao?.notas || "",
     },
   });
 
   useEffect(() => {
-    loadProjetos();
-  }, []);
+    if (open) {
+      loadClients();
+      // Reset form when opening with new data
+      form.reset({
+        titulo: obrigacao?.titulo || "",
+        client_id: obrigacao?.client_id || clientId || "",
+        tipo: obrigacao?.tipo || "iva",
+        periodicidade: obrigacao?.periodicidade || "mensal",
+        periodo_referencia: obrigacao?.periodo_referencia || "",
+        deadline_revisao_senior: obrigacao?.deadline_revisao_senior ? new Date(obrigacao.deadline_revisao_senior) : new Date(),
+        deadline_interna: obrigacao?.deadline_interna ? new Date(obrigacao.deadline_interna) : new Date(),
+        deadline_oficial: obrigacao?.deadline_oficial ? new Date(obrigacao.deadline_oficial) : new Date(),
+        prioridade: obrigacao?.prioridade || "Media",
+        comentarios: obrigacao?.notas || "",
+      });
+    }
+  }, [open, obrigacao, clientId]);
 
-  const loadProjetos = async () => {
+  const loadClients = async () => {
+    if (isDemoMode()) {
+      setClients([demoClient]);
+      return;
+    }
+    
     const { data } = await supabase
-      .from("projetos")
-      .select("id, nome")
-      .eq("ativo", true)
-      .order("nome");
-    setProjetos(data || []);
+      .from("clients")
+      .select("id, name")
+      .is("deleted_at", null)
+      .order("name");
+    setClients(data || []);
   };
+
+  const filteredClients = clients.filter(client => 
+    client.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const onSubmit = async (data: ObrigacaoFormData) => {
     setLoading(true);
     try {
+      if (isDemoMode()) {
+        // Demo mode - just simulate success
+        toast.success(obrigacao ? "Obrigação atualizada com sucesso" : "Obrigação criada com sucesso");
+        onSuccess();
+        onOpenChange(false);
+        form.reset();
+        setLoading(false);
+        return;
+      }
+
       if (obrigacao) {
         const { error } = await supabase
           .from("obrigacoes")
           .update({
             titulo: data.titulo,
-            projeto_id: data.projeto_id,
-            tipo: data.tipo,
+            client_id: data.client_id,
+            tipo: data.tipo as TipoObrigacao,
             periodicidade: data.periodicidade,
             periodo_referencia: data.periodo_referencia,
-            prioridade: data.prioridade,
             notas: data.comentarios,
             deadline_revisao_senior: data.deadline_revisao_senior.toISOString(),
             deadline_interna: data.deadline_interna.toISOString(),
@@ -147,20 +205,23 @@ export function ObrigacaoForm({
 
         toast.success("Obrigação atualizada com sucesso");
       } else {
+        const insertData = {
+          titulo: data.titulo,
+          client_id: data.client_id,
+          projeto_id: data.client_id, // Usa client_id como projeto_id temporariamente (campo obrigatório legado)
+          tipo: data.tipo as TipoObrigacao,
+          periodicidade: data.periodicidade,
+          periodo_referencia: data.periodo_referencia || null,
+          notas: data.comentarios || null,
+          deadline_revisao_senior: data.deadline_revisao_senior.toISOString(),
+          deadline_interna: data.deadline_interna.toISOString(),
+          deadline_oficial: data.deadline_oficial.toISOString(),
+          estado: "pendente" as const,
+        };
+        
         const { data: newObrigacao, error } = await supabase
           .from("obrigacoes")
-          .insert({
-            titulo: data.titulo,
-            projeto_id: data.projeto_id,
-            tipo: data.tipo,
-            periodicidade: data.periodicidade,
-            periodo_referencia: data.periodo_referencia,
-            notas: data.comentarios,
-            deadline_revisao_senior: data.deadline_revisao_senior.toISOString(),
-            deadline_interna: data.deadline_interna.toISOString(),
-            deadline_oficial: data.deadline_oficial.toISOString(),
-            estado: "pendente",
-          })
+          .insert([insertData])
           .select()
           .single();
 
@@ -180,8 +241,8 @@ export function ObrigacaoForm({
       onOpenChange(false);
       form.reset();
     } catch (error: any) {
-      console.error("Erro ao salvar obrigação:", error);
-      toast.error(error.message || "Erro ao salvar obrigação");
+      console.error("Erro ao guardar obrigação:", error);
+      toast.error(error.message || "Erro ao guardar obrigação");
     } finally {
       setLoading(false);
     }
@@ -214,26 +275,42 @@ export function ObrigacaoForm({
 
             <FormField
               control={form.control}
-              name="projeto_id"
+              name="client_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Projeto</FormLabel>
+                  <FormLabel>Cliente *</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     value={field.value || undefined}
-                    disabled={!!projetoId}
+                    disabled={!!clientId}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione um projeto" />
+                        <SelectValue placeholder="Seleciona o cliente" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {projetos.filter(p => p.id).map((projeto) => (
-                        <SelectItem key={projeto.id} value={projeto.id}>
-                          {projeto.nome}
+                      <div className="px-2 pb-2">
+                        <div className="relative">
+                          <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            placeholder="Pesquisar cliente..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-8 h-8"
+                          />
+                        </div>
+                      </div>
+                      {filteredClients.filter(c => c.id).map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.name}
                         </SelectItem>
                       ))}
+                      {filteredClients.length === 0 && (
+                        <div className="py-2 px-2 text-sm text-muted-foreground text-center">
+                          Nenhum cliente encontrado
+                        </div>
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -247,7 +324,7 @@ export function ObrigacaoForm({
                 name="tipo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tipo</FormLabel>
+                    <FormLabel>Tipo de obrigação</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       value={field.value}
@@ -260,7 +337,7 @@ export function ObrigacaoForm({
                     <SelectContent>
                       {TIPOS_OBRIGACAO.filter(t => t).map((tipo) => (
                         <SelectItem key={tipo} value={tipo}>
-                          {tipo.toUpperCase()}
+                          {TIPOS_LABELS[tipo] || tipo.toUpperCase()}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -340,14 +417,14 @@ export function ObrigacaoForm({
             />
 
             <div className="space-y-3 border-t pt-4">
-              <h4 className="text-sm font-medium">Deadlines</h4>
+              <h4 className="text-sm font-medium">Datas</h4>
               
               <FormField
                 control={form.control}
                 name="deadline_revisao_senior"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel className="text-info">Revisão Senior</FormLabel>
+                    <FormLabel className="text-info">Data de revisão</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -359,7 +436,7 @@ export function ObrigacaoForm({
                             )}
                           >
                             {field.value ? (
-                              format(field.value, "PPP", { locale: pt })
+                              format(field.value, "dd/MM/yyyy", { locale: pt })
                             ) : (
                               <span>Selecione a data</span>
                             )}
@@ -390,7 +467,7 @@ export function ObrigacaoForm({
                 name="deadline_interna"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel className="text-warning">Deadline Interna</FormLabel>
+                    <FormLabel className="text-warning">Data interna</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -402,7 +479,7 @@ export function ObrigacaoForm({
                             )}
                           >
                             {field.value ? (
-                              format(field.value, "PPP", { locale: pt })
+                              format(field.value, "dd/MM/yyyy", { locale: pt })
                             ) : (
                               <span>Selecione a data</span>
                             )}
@@ -433,7 +510,7 @@ export function ObrigacaoForm({
                 name="deadline_oficial"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel className="text-destructive">Deadline Oficial</FormLabel>
+                    <FormLabel className="text-destructive">Data oficial</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -445,7 +522,7 @@ export function ObrigacaoForm({
                             )}
                           >
                             {field.value ? (
-                              format(field.value, "PPP", { locale: pt })
+                              format(field.value, "dd/MM/yyyy", { locale: pt })
                             ) : (
                               <span>Selecione a data</span>
                             )}
@@ -477,12 +554,12 @@ export function ObrigacaoForm({
               name="comentarios"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Comentários</FormLabel>
+                  <FormLabel>Notas</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Notas adicionais"
+                      placeholder="Notas adicionais..."
+                      className="resize-none"
                       {...field}
-                      rows={3}
                     />
                   </FormControl>
                   <FormMessage />
@@ -490,7 +567,7 @@ export function ObrigacaoForm({
               )}
             />
 
-            <div className="flex gap-2 justify-end">
+            <div className="flex gap-2 justify-end pt-4">
               <Button
                 type="button"
                 variant="outline"
@@ -499,7 +576,7 @@ export function ObrigacaoForm({
                 Cancelar
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? "A guardar..." : obrigacao ? "Atualizar" : "Criar"}
+                {loading ? "A guardar..." : "Guardar"}
               </Button>
             </div>
           </form>

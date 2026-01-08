@@ -1211,6 +1211,12 @@ export type Database = {
         | "dmr"
         | "ifs"
         | "outro"
+        | "retencoes"
+        | "modelo_30"
+        | "cope"
+        | "recapitulativa"
+        | "dmis"
+        | "iuc"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1357,6 +1363,12 @@ export const Constants = {
         "dmr",
         "ifs",
         "outro",
+        "retencoes",
+        "modelo_30",
+        "cope",
+        "recapitulativa",
+        "dmis",
+        "iuc",
       ],
     },
   },

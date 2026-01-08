@@ -6,7 +6,7 @@ interface ObrigacoesFilters {
   periodo: string;
   estado: string;
   prioridade: string;
-  projeto_id: string;
+  client_id: string;
   prazo: string; // "atrasadas" | "hoje" | "semana" | "todos"
 }
 
@@ -21,7 +21,7 @@ export function useObrigacoesFilters() {
       periodo: "",
       estado: "todos",
       prioridade: "",
-      projeto_id: "",
+      client_id: "",
       prazo: "todos",
     };
   });
@@ -41,7 +41,7 @@ export function useObrigacoesFilters() {
       periodo: "",
       estado: "todos",
       prioridade: "",
-      projeto_id: "",
+      client_id: "",
       prazo: "todos",
     });
   };

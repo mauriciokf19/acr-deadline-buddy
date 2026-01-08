@@ -21,6 +21,7 @@ import { createLog } from "@/lib/logUtils";
 import { softDeleteObrigacao, restoreObrigacao } from "@/lib/obrigacoesService";
 import { startOfDay, endOfDay, addDays } from "date-fns";
 import { useSearchParams } from "react-router-dom";
+import { isDemoMode, demoObrigacoes, demoClient } from "@/lib/demoData";
 
 export default function Obrigacoes() {
   const [searchParams] = useSearchParams();
@@ -37,19 +38,20 @@ export default function Obrigacoes() {
   const [submeterModalOpen, setSubmeterModalOpen] = useState(false);
   const [obrigacaoToSubmit, setObrigacaoToSubmit] = useState<any>(null);
   const [submeterLoading, setSubmeterLoading] = useState(false);
+  const [clients, setClients] = useState<any[]>([]);
   const { filters, updateFilter, clearFilters } = useObrigacoesFilters();
 
   // Processar deep links
   useEffect(() => {
     const prazoParam = searchParams.get("prazo");
-    const projetoParam = searchParams.get("projeto_id");
+    const clientParam = searchParams.get("client_id");
     const idParam = searchParams.get("id");
 
     if (prazoParam && prazoParam !== filters.prazo) {
       updateFilter("prazo", prazoParam);
     }
-    if (projetoParam && projetoParam !== filters.projeto_id) {
-      updateFilter("projeto_id", projetoParam);
+    if (clientParam && clientParam !== filters.client_id) {
+      updateFilter("client_id", clientParam);
     }
     if (idParam) {
       setSelectedObrigacaoId(idParam);
@@ -59,9 +61,26 @@ export default function Obrigacoes() {
   useEffect(() => {
     loadObrigacoes();
     loadProfileSettings();
+    loadClients();
   }, [filters]);
 
+  const loadClients = async () => {
+    if (isDemoMode()) {
+      setClients([demoClient]);
+      return;
+    }
+
+    const { data } = await supabase
+      .from("clients")
+      .select("id, name")
+      .is("deleted_at", null)
+      .order("name");
+    setClients(data || []);
+  };
+
   const loadProfileSettings = async () => {
+    if (isDemoMode()) return;
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -81,12 +100,39 @@ export default function Obrigacoes() {
 
   const loadObrigacoes = async () => {
     setLoading(true);
+    
+    if (isDemoMode()) {
+      // Demo mode - use dados fictícios com client
+      const demoWithClient = demoObrigacoes.map(ob => ({
+        ...ob,
+        client: demoClient,
+      }));
+      
+      let filtered = demoWithClient;
+      
+      if (filters.search) {
+        filtered = filtered.filter(ob => 
+          ob.titulo.toLowerCase().includes(filters.search.toLowerCase())
+        );
+      }
+      if (filters.tipo) {
+        filtered = filtered.filter(ob => ob.tipo === filters.tipo);
+      }
+      if (filters.estado && filters.estado !== "todos") {
+        filtered = filtered.filter(ob => ob.estado === filters.estado);
+      }
+      
+      setObrigacoes(filtered);
+      setLoading(false);
+      return;
+    }
+    
     try {
       let query = supabase
         .from("obrigacoes")
         .select(`
           *,
-          projeto:projetos(nome, cor)
+          client:clients(id, name)
         `)
         .is("deleted_at", null)
         .order("deadline_oficial");
@@ -106,8 +152,8 @@ export default function Obrigacoes() {
       if (filters.prioridade) {
         query = (query as any).eq("prioridade", filters.prioridade);
       }
-      if (filters.projeto_id) {
-        query = query.eq("projeto_id", filters.projeto_id);
+      if (filters.client_id) {
+        query = query.eq("client_id", filters.client_id);
       }
 
       // Filtros de prazo
@@ -124,7 +170,6 @@ export default function Obrigacoes() {
       } else if (filters.prazo === "futuro") {
         query = query.gt("deadline_oficial", addDays(now, 7).toISOString());
       }
-      // "todos" shows all obligations
 
       const { data, error } = await query;
       if (error) throw error;
@@ -139,6 +184,11 @@ export default function Obrigacoes() {
   };
 
   const handleQuickAction = async (obrigacao: any, action: string) => {
+    if (isDemoMode()) {
+      toast.success("Ação simulada em Demo Mode");
+      return;
+    }
+
     try {
       let updates: any = {};
       let logDetails = "";
@@ -159,7 +209,6 @@ export default function Obrigacoes() {
           logDetails = "Aprovado pelo Senior";
           break;
         case "submeter":
-          // Open modal to collect submission date (and comprovativo if needed)
           setObrigacaoToSubmit(obrigacao);
           setSubmeterModalOpen(true);
           return;
@@ -207,14 +256,20 @@ export default function Obrigacoes() {
   const confirmDelete = async () => {
     if (!obrigacaoToDelete) return;
 
+    if (isDemoMode()) {
+      toast.success("Obrigação arquivada (Demo Mode)");
+      setDeleteDialogOpen(false);
+      setObrigacaoToDelete(null);
+      return;
+    }
+
     setDeleteLoading(true);
     const result = await softDeleteObrigacao({ obrigacaoId: obrigacaoToDelete.id });
     setDeleteLoading(false);
 
     if (result.success) {
-      // Mostrar snackbar com opção de desfazer
       const toastId = toast.success(
-        `Obrigação arquivada. ${result.affectedTarefas} tarefas e ${result.affectedLembretes} lembretes também foram arquivados.`,
+        `Obrigação arquivada. ${result.affectedTarefas} tarefas também foram arquivadas.`,
         {
           duration: 10000,
           action: {
@@ -239,7 +294,7 @@ export default function Obrigacoes() {
     
     if (result.success) {
       toast.success(
-        `Obrigação restaurada. ${result.affectedTarefas} tarefas e ${result.affectedLembretes} lembretes também foram restaurados.`
+        `Obrigação restaurada. ${result.affectedTarefas} tarefas também foram restauradas.`
       );
       loadObrigacoes();
     } else {
@@ -249,6 +304,13 @@ export default function Obrigacoes() {
 
   const handleSubmeterConfirm = async (date: Date) => {
     if (!obrigacaoToSubmit) return;
+
+    if (isDemoMode()) {
+      toast.success("Obrigação submetida (Demo Mode)");
+      setSubmeterModalOpen(false);
+      setObrigacaoToSubmit(null);
+      return;
+    }
 
     setSubmeterLoading(true);
     try {
@@ -275,11 +337,7 @@ export default function Obrigacoes() {
       loadObrigacoes();
     } catch (error: any) {
       console.error("Erro ao submeter obrigação:", error);
-      if (error.message?.includes("constraint")) {
-        toast.error("Erro: Verifique se todos os campos obrigatórios estão preenchidos");
-      } else {
-        toast.error("Erro ao submeter obrigação");
-      }
+      toast.error("Erro ao submeter obrigação");
     } finally {
       setSubmeterLoading(false);
     }
@@ -287,7 +345,7 @@ export default function Obrigacoes() {
 
   const hasActiveFilters = filters.search || filters.tipo || filters.periodo || 
                           (filters.estado && filters.estado !== "todos") || 
-                          filters.prioridade || filters.projeto_id || 
+                          filters.prioridade || filters.client_id || 
                           (filters.prazo && filters.prazo !== "todos");
 
   return (
@@ -348,6 +406,23 @@ export default function Obrigacoes() {
                   </Button>
                 )}
               </div>
+
+              <Select
+                value={filters.client_id || "todos"}
+                onValueChange={(value) => updateFilter("client_id", value === "todos" ? "" : value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os clientes</SelectItem>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
               <Select
                 value={filters.prazo}
