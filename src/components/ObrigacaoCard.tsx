@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, AlertCircle, Edit, Trash2 } from "lucide-react";
+import { Calendar, Clock, AlertCircle, Edit, Trash2, Building2 } from "lucide-react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -14,10 +14,9 @@ interface Obrigacao {
   deadline_revisao_senior: string;
   deadline_interna: string;
   deadline_oficial: string;
-  projeto?: {
-    nome: string;
-    cor: string;
-  };
+  client?: {
+    name: string;
+  } | null;
 }
 
 interface ObrigacaoCardProps {
@@ -44,6 +43,12 @@ const tipoLabels: Record<string, string> = {
   modelo_22: "Modelo 22",
   dmr: "DMR",
   ifs: "IFS",
+  retencoes: "Retenções",
+  modelo_30: "Modelo 30",
+  cope: "COPE",
+  recapitulativa: "Recapitulativa",
+  dmis: "DMIS",
+  iuc: "IUC",
   outro: "Outro",
 };
 
@@ -51,15 +56,9 @@ export function ObrigacaoCard({ obrigacao, onQuickAction, onEdit, onDelete }: Ob
   const isAtrasado = new Date(obrigacao.deadline_oficial) < new Date() && 
                      obrigacao.estado !== "concluido";
 
-  const proximaDeadline = obrigacao.estado === "pendente" 
-    ? obrigacao.deadline_revisao_senior
-    : obrigacao.estado === "em_revisao"
-    ? obrigacao.deadline_interna
-    : obrigacao.deadline_oficial;
-
   return (
     <Card className="overflow-hidden transition-shadow hover:shadow-md" data-testid="obrigacao-card">
-      <div className="h-1" style={{ backgroundColor: obrigacao.projeto?.cor || "#3B82F6" }} />
+      <div className="h-1 bg-primary" />
       
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
@@ -73,8 +72,11 @@ export function ObrigacaoCard({ obrigacao, onQuickAction, onEdit, onDelete }: Ob
               </Badge>
             </div>
             <h3 className="font-semibold leading-none">{obrigacao.titulo}</h3>
-            {obrigacao.projeto && (
-              <p className="text-sm text-muted-foreground">{obrigacao.projeto.nome}</p>
+            {obrigacao.client && (
+              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                <Building2 className="h-3 w-3" />
+                {obrigacao.client.name}
+              </p>
             )}
           </div>
           {isAtrasado && (
@@ -89,21 +91,21 @@ export function ObrigacaoCard({ obrigacao, onQuickAction, onEdit, onDelete }: Ob
             <Clock className="h-4 w-4 text-info" />
             <span className="text-xs">Revisão:</span>
             <span className="font-medium text-foreground">
-              {format(new Date(obrigacao.deadline_revisao_senior), "dd MMM", { locale: pt })}
+              {format(new Date(obrigacao.deadline_revisao_senior), "dd/MM/yyyy", { locale: pt })}
             </span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
             <Clock className="h-4 w-4 text-warning" />
             <span className="text-xs">Interna:</span>
             <span className="font-medium text-foreground">
-              {format(new Date(obrigacao.deadline_interna), "dd MMM", { locale: pt })}
+              {format(new Date(obrigacao.deadline_interna), "dd/MM/yyyy", { locale: pt })}
             </span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
             <Calendar className="h-4 w-4 text-destructive" />
             <span className="text-xs">Oficial:</span>
             <span className="font-medium text-foreground">
-              {format(new Date(obrigacao.deadline_oficial), "dd MMM", { locale: pt })}
+              {format(new Date(obrigacao.deadline_oficial), "dd/MM/yyyy", { locale: pt })}
             </span>
           </div>
         </div>

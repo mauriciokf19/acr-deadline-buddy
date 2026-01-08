@@ -449,7 +449,7 @@ export const demoTasks: TaskWithRelations[] = [
 ];
 
 // ============================================
-// OBRIGAÇÕES DEMO (via work_item_links)
+// OBRIGAÇÕES DEMO (ligadas a cliente)
 // ============================================
 export const demoObrigacoes = [
   {
@@ -462,7 +462,7 @@ export const demoObrigacoes = [
     deadline_oficial: addDays(now, 10).toISOString(),
     deadline_interna: addDays(now, 5).toISOString(),
     deadline_revisao_senior: addDays(now, 3).toISOString(),
-    projeto_id: null,
+    client_id: DEMO_IDS.client,
     owner_id: "demo-user-id",
     created_at: subDays(now, 30).toISOString(),
     updated_at: now.toISOString(),
@@ -478,9 +478,25 @@ export const demoObrigacoes = [
     deadline_oficial: addDays(now, 30).toISOString(),
     deadline_interna: addDays(now, 20).toISOString(),
     deadline_revisao_senior: addDays(now, 15).toISOString(),
-    projeto_id: null,
+    client_id: DEMO_IDS.client,
     owner_id: "demo-user-id",
     created_at: subDays(now, 60).toISOString(),
+    updated_at: now.toISOString(),
+    deleted_at: null,
+  },
+  {
+    id: "demo-obrigacao-003",
+    titulo: "Retenções - Janeiro 2025",
+    tipo: "retencoes",
+    periodicidade: "mensal",
+    periodo_referencia: "Janeiro 2025",
+    estado: "pendente",
+    deadline_oficial: addDays(now, 15).toISOString(),
+    deadline_interna: addDays(now, 10).toISOString(),
+    deadline_revisao_senior: addDays(now, 7).toISOString(),
+    client_id: DEMO_IDS.client,
+    owner_id: "demo-user-id",
+    created_at: subDays(now, 5).toISOString(),
     updated_at: now.toISOString(),
     deleted_at: null,
   },
