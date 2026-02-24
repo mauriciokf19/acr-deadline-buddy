@@ -14,12 +14,18 @@ import { startOfWeek, endOfWeek, addDays, isToday, isBefore, startOfDay } from "
 import { getTodayPT } from "@/lib/dateUtils";
 import { toZonedTime } from "date-fns-tz";
 import { toast } from "sonner";
+import { isDemoMode } from "@/lib/demoData";
+import { useDemoStore } from "@/lib/demoStore";
 import type { TaskWithRelations } from "@/types/tasks";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const { filters } = useDashboardFilters();
   const [loading, setLoading] = useState(true);
+  
+  // Demo store data
+  const demoObrigacoes = useDemoStore((state) => state.obrigacoes);
+  const demoClientsStore = useDemoStore((state) => state.clients);
   
   // KPIs de Obrigações
   const [kpis, setKpis] = useState({
@@ -88,18 +94,23 @@ export default function Dashboard() {
   }, [allTasks]);
 
   useEffect(() => {
-    if (user) {
+    if (user || isDemoMode()) {
       loadDashboardData();
     }
-  }, [user, filters]);
+  }, [user, filters, demoObrigacoes]);
 
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      await Promise.all([
-        loadKPIs(),
-        loadEventos(),
-      ]);
+      if (isDemoMode()) {
+        loadDemoKPIs();
+        loadDemoEventos();
+      } else {
+        await Promise.all([
+          loadKPIs(),
+          loadEventos(),
+        ]);
+      }
     } catch (error) {
       console.error("Erro ao carregar dashboard:", error);
     } finally {
@@ -107,6 +118,96 @@ export default function Dashboard() {
     }
   };
 
+  // ---- DEMO MODE KPIs & Events ----
+  const loadDemoKPIs = () => {
+    const TIMEZONE = "Europe/Lisbon";
+    const todayPT = getTodayPT();
+    const inicioSemana = startOfWeek(todayPT, { weekStartsOn: 1 });
+    const fimSemana = endOfWeek(todayPT, { weekStartsOn: 1 });
+
+    let atrasadas = 0;
+    let vencemHoje = 0;
+    let estaSemana = 0;
+    let noPrazo = 0;
+
+    const activeObrigacoes = demoObrigacoes.filter((o: any) => 
+      !o.deleted_at && !["concluido", "submetido"].includes(o.estado)
+    );
+
+    activeObrigacoes.forEach((obr: any) => {
+      const oficial = new Date(obr.deadline_oficial);
+      oficial.setHours(0, 0, 0, 0);
+      const interna = new Date(obr.deadline_interna);
+      interna.setHours(0, 0, 0, 0);
+      const revisao = new Date(obr.deadline_revisao_senior);
+      revisao.setHours(0, 0, 0, 0);
+
+      if (oficial < todayPT) {
+        atrasadas++;
+        return;
+      }
+      if (
+        oficial.getTime() === todayPT.getTime() ||
+        interna.getTime() === todayPT.getTime() ||
+        revisao.getTime() === todayPT.getTime()
+      ) {
+        vencemHoje++;
+        return;
+      }
+      if (
+        (oficial >= inicioSemana && oficial <= fimSemana) ||
+        (interna >= inicioSemana && interna <= fimSemana) ||
+        (revisao >= inicioSemana && revisao <= fimSemana)
+      ) {
+        estaSemana++;
+        return;
+      }
+      noPrazo++;
+    });
+
+    setKpis({ atrasadas, vencemHoje, estaSemana, noPrazo });
+  };
+
+  const loadDemoEventos = () => {
+    const todayPT = getTodayPT();
+    const seteDias = addDays(todayPT, 7);
+    const eventosArray: any[] = [];
+
+    const activeObrigacoes = demoObrigacoes.filter((o: any) => !o.deleted_at);
+
+    activeObrigacoes.forEach((obr: any) => {
+      const client = demoClientsStore.find((c) => c.id === obr.client_id);
+      const datas = [
+        { tipo: "REVISAO", data: obr.deadline_revisao_senior },
+        { tipo: "INTERNA", data: obr.deadline_interna },
+        { tipo: "OFICIAL", data: obr.deadline_oficial },
+      ];
+
+      datas.forEach(({ tipo, data: dataStr }) => {
+        if (!dataStr) return;
+        const dataEvento = new Date(dataStr);
+        dataEvento.setHours(0, 0, 0, 0);
+
+        if (dataEvento >= todayPT && dataEvento <= seteDias) {
+          eventosArray.push({
+            id: obr.id,
+            titulo: obr.titulo,
+            tipo_evento: tipo,
+            data_evento: dataStr,
+            estado: obr.estado,
+            periodicidade: obr.periodicidade,
+            periodo_referencia: obr.periodo_referencia || "-",
+            cliente_nome: client?.name || "Sem cliente",
+          });
+        }
+      });
+    });
+
+    eventosArray.sort((a, b) => a.data_evento.localeCompare(b.data_evento));
+    setEventos(eventosArray);
+  };
+
+  // ---- PRODUCTION MODE ----
   const loadKPIs = async () => {
     let query = supabase
       .from("obrigacoes")
@@ -114,7 +215,6 @@ export default function Dashboard() {
       .is("deleted_at", null)
       .not("estado", "in", '("concluido","submetido")');
 
-    // Aplicar filtros por cliente
     if (filters.clientes && filters.clientes.length > 0) {
       query = query.in("client_id", filters.clientes);
     }
@@ -128,7 +228,6 @@ export default function Dashboard() {
     const { data, error } = await query;
     if (error) throw error;
 
-    // Use Europe/Lisbon timezone
     const TIMEZONE = "Europe/Lisbon";
     const todayPT = getTodayPT();
     const inicioSemana = startOfWeek(todayPT, { weekStartsOn: 1 });
@@ -140,23 +239,17 @@ export default function Dashboard() {
     let noPrazo = 0;
 
     (data || []).forEach((obr: any) => {
-      // Convert all dates to Europe/Lisbon timezone and normalize to start of day
       const oficial = toZonedTime(new Date(obr.deadline_oficial), TIMEZONE);
       oficial.setHours(0, 0, 0, 0);
-      
       const interna = toZonedTime(new Date(obr.deadline_interna), TIMEZONE);
       interna.setHours(0, 0, 0, 0);
-      
       const revisao = toZonedTime(new Date(obr.deadline_revisao_senior), TIMEZONE);
       revisao.setHours(0, 0, 0, 0);
 
-      // Atrasadas: estado NOT IN ('Submetido','Concluido') AND todayPT > deadline_oficial
       if (oficial < todayPT) {
         atrasadas++;
         return;
       }
-
-      // Vencem Hoje: qualquer das 3 datas = hoje
       if (
         oficial.getTime() === todayPT.getTime() ||
         interna.getTime() === todayPT.getTime() ||
@@ -165,8 +258,6 @@ export default function Dashboard() {
         vencemHoje++;
         return;
       }
-
-      // Esta Semana: qualquer das 3 datas dentro da semana ISO
       if (
         (oficial >= inicioSemana && oficial <= fimSemana) ||
         (interna >= inicioSemana && interna <= fimSemana) ||
@@ -175,8 +266,6 @@ export default function Dashboard() {
         estaSemana++;
         return;
       }
-
-      // No Prazo: ativas e não classificadas acima
       noPrazo++;
     });
 
@@ -203,7 +292,6 @@ export default function Dashboard() {
       `)
       .is("deleted_at", null);
 
-    // Aplicar filtros por cliente
     if (filters.clientes && filters.clientes.length > 0) {
       query = query.in("client_id", filters.clientes);
     }
@@ -216,7 +304,6 @@ export default function Dashboard() {
 
     const TIMEZONE = "Europe/Lisbon";
 
-    // Expandir para eventos individuais
     const eventosArray: any[] = [];
     (data || []).forEach((obr: any) => {
       const datas = [
@@ -245,7 +332,6 @@ export default function Dashboard() {
       });
     });
 
-    // Ordenar por data
     eventosArray.sort((a, b) => a.data_evento.localeCompare(b.data_evento));
     setEventos(eventosArray);
   };
@@ -273,7 +359,6 @@ export default function Dashboard() {
   };
 
   const handleReassignTask = (taskId: string) => {
-    // TODO: Open modal to reassign
     toast.info("Funcionalidade de reatribuição em desenvolvimento");
   };
 

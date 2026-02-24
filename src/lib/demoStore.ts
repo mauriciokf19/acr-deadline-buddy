@@ -6,7 +6,7 @@ import {
   demoEmailThreads, 
   demoTasks, 
   demoEmailMessages,
-  demoClient,
+  demoClients,
   demoContacts,
   demoActivityLog,
   demoComments,
@@ -53,11 +53,17 @@ interface DemoState {
   
   // Client actions
   updateClient: (clientId: string, updates: Partial<Client>) => void;
+  createClient: (client: Omit<Client, "id" | "created_at" | "updated_at">) => void;
   
   // Contact actions
   createContact: (contact: Omit<Contact, "id" | "created_at" | "updated_at">) => void;
   updateContact: (contactId: string, updates: Partial<Contact>) => void;
   deleteContact: (contactId: string) => void;
+  
+  // Obrigação actions
+  updateObrigacao: (obrigacaoId: string, updates: any) => void;
+  createObrigacao: (obrigacao: any) => void;
+  deleteObrigacao: (obrigacaoId: string) => void;
   
   // Comment actions
   addComment: (comment: Omit<Comment, "id" | "created_at" | "updated_at">) => void;
@@ -76,7 +82,7 @@ export const useDemoStore = create<DemoState>((set, get) => ({
   threads: [...demoEmailThreads],
   messages: { ...demoEmailMessages },
   tasks: [...demoTasks],
-  clients: [demoClient],
+  clients: [...demoClients],
   contacts: [...demoContacts],
   activityLog: [...demoActivityLog],
   comments: [...demoComments],
@@ -257,6 +263,19 @@ export const useDemoStore = create<DemoState>((set, get) => ({
     }));
   },
   
+  createClient: (client) => {
+    const now = new Date().toISOString();
+    const newClient: Client = {
+      ...client,
+      id: generateId(),
+      created_at: now,
+      updated_at: now,
+    };
+    set((state) => ({
+      clients: [...state.clients, newClient],
+    }));
+  },
+  
   // Contact actions
   createContact: (contact) => {
     const now = new Date().toISOString();
@@ -284,6 +303,52 @@ export const useDemoStore = create<DemoState>((set, get) => ({
     set((state) => ({
       contacts: state.contacts.map((c) =>
         c.id === contactId ? { ...c, deleted_at: new Date().toISOString() } : c
+      ),
+    }));
+  },
+  
+  // Obrigação actions
+  updateObrigacao: (obrigacaoId, updates) => {
+    set((state) => ({
+      obrigacoes: state.obrigacoes.map((o: any) =>
+        o.id === obrigacaoId ? { ...o, ...updates, updated_at: new Date().toISOString() } : o
+      ),
+    }));
+    get().logActivity({
+      actor_id: "demo-user-id",
+      action: "updated",
+      entity_type: "obrigacao",
+      entity_id: obrigacaoId,
+      metadata: updates,
+      tenant_id: "demo-user-id",
+    });
+  },
+  
+  createObrigacao: (obrigacao) => {
+    const now = new Date().toISOString();
+    const newObrigacao = {
+      ...obrigacao,
+      id: generateId(),
+      created_at: now,
+      updated_at: now,
+    };
+    set((state) => ({
+      obrigacoes: [...state.obrigacoes, newObrigacao],
+    }));
+    get().logActivity({
+      actor_id: "demo-user-id",
+      action: "created",
+      entity_type: "obrigacao",
+      entity_id: newObrigacao.id,
+      metadata: { titulo: newObrigacao.titulo },
+      tenant_id: "demo-user-id",
+    });
+  },
+  
+  deleteObrigacao: (obrigacaoId) => {
+    set((state) => ({
+      obrigacoes: state.obrigacoes.map((o: any) =>
+        o.id === obrigacaoId ? { ...o, deleted_at: new Date().toISOString() } : o
       ),
     }));
   },
@@ -322,7 +387,7 @@ export const useDemoStore = create<DemoState>((set, get) => ({
       threads: [...demoEmailThreads],
       messages: { ...demoEmailMessages },
       tasks: [...demoTasks],
-      clients: [demoClient],
+      clients: [...demoClients],
       contacts: [...demoContacts],
       activityLog: [...demoActivityLog],
       comments: [...demoComments],

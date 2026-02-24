@@ -14,8 +14,7 @@ interface EventoObrigacao {
   estado: string;
   periodicidade: string;
   periodo_referencia: string;
-  projeto_nome: string;
-  projeto_cor: string;
+  cliente_nome: string;
 }
 
 interface DashboardEventsListProps {
@@ -112,13 +111,9 @@ export function DashboardEventsList({ eventos }: DashboardEventsListProps) {
                           </div>
                           <p className="text-sm font-medium truncate">{evento.titulo}</p>
                           <p className="text-xs text-muted-foreground">
-                            {evento.periodo_referencia} • {evento.projeto_nome}
+                            {evento.periodo_referencia} • {evento.cliente_nome}
                           </p>
                         </div>
-                        <div
-                          className="h-3 w-3 rounded-full flex-shrink-0 mt-1"
-                          style={{ backgroundColor: evento.projeto_cor }}
-                        />
                       </div>
                     </CardContent>
                   </Card>
