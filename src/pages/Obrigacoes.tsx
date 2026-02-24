@@ -21,10 +21,13 @@ import { createLog } from "@/lib/logUtils";
 import { softDeleteObrigacao, restoreObrigacao } from "@/lib/obrigacoesService";
 import { startOfDay, endOfDay, addDays } from "date-fns";
 import { useSearchParams } from "react-router-dom";
-import { isDemoMode, demoObrigacoes, demoClient } from "@/lib/demoData";
+import { isDemoMode } from "@/lib/demoData";
+import { useDemoStore } from "@/lib/demoStore";
 
 export default function Obrigacoes() {
   const [searchParams] = useSearchParams();
+  const demoObrigacoes = useDemoStore((state) => state.obrigacoes);
+  const demoClientsStore = useDemoStore((state) => state.clients);
   const [obrigacoes, setObrigacoes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -66,7 +69,7 @@ export default function Obrigacoes() {
 
   const loadClients = async () => {
     if (isDemoMode()) {
-      setClients([demoClient]);
+      setClients(demoClientsStore.filter(c => !c.deleted_at));
       return;
     }
 
@@ -102,10 +105,10 @@ export default function Obrigacoes() {
     setLoading(true);
     
     if (isDemoMode()) {
-      // Demo mode - use dados fictícios com client
-      const demoWithClient = demoObrigacoes.map(ob => ({
+      const activeObrigacoes = demoObrigacoes.filter((o: any) => !o.deleted_at);
+      const demoWithClient = activeObrigacoes.map((ob: any) => ({
         ...ob,
-        client: demoClient,
+        client: demoClientsStore.find(c => c.id === ob.client_id) || null,
       }));
       
       let filtered = demoWithClient;
@@ -120,6 +123,9 @@ export default function Obrigacoes() {
       }
       if (filters.estado && filters.estado !== "todos") {
         filtered = filtered.filter(ob => ob.estado === filters.estado);
+      }
+      if (filters.client_id) {
+        filtered = filtered.filter(ob => ob.client_id === filters.client_id);
       }
       
       setObrigacoes(filtered);

@@ -14,6 +14,11 @@ export default function Auth() {
   const { user, signIn, signUp } = useAuth();
   const [loading, setLoading] = useState(false);
 
+  // If in demo mode, redirect to dashboard
+  if (isDemoMode()) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   // Redirect if already logged in
   if (user) {
     return <Navigate to="/" replace />;
@@ -67,14 +72,8 @@ export default function Auth() {
   const handleEnterDemo = () => {
     enableDemoMode();
     toast.success("Demo Mode activado!");
-    // Reload to enter demo mode
     window.location.href = "/dashboard";
   };
-
-  // If in demo mode, redirect to dashboard
-  if (isDemoMode()) {
-    return <Navigate to="/dashboard" replace />;
-  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted p-4">
